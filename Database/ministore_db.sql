@@ -32,12 +32,20 @@ CREATE TABLE kehang (
     ten TEXT NOT NULL
 );
 
+-- Tạo bảng hãng sản xuất
+CREATE TABLE hangsanxuat (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    ten TEXT NOT NULL
+);
+
 -- Tạo bảng sản phẩm
 CREATE TABLE sanpham (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     ten TEXT NOT NULL,
     theloai_id INTEGER,
-    FOREIGN KEY (theloai_id) REFERENCES theloai(id)
+    hangsanxuat_id INTEGER,
+    FOREIGN KEY (theloai_id) REFERENCES theloai(id),
+    FOREIGN KEY (hangsanxuat_id) REFERENCES hangsanxuat(id)
 );
 -- mã vạch sản phẩm (mã vạch EAN/UPC) dùng để định danh duy nhất một loại sản phẩm 
 --cụ thể. Tất cả các gói mì cùng loại, cùng hương vị, cùng trọng lượng, và cùng nhà sản xuất thì sẽ có cùng một mã vạch.
