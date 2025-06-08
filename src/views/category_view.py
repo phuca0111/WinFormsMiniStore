@@ -1,6 +1,6 @@
 import sys
 import os
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../')))
 import tkinter as tk
 from tkinter import ttk, messagebox
 from Core.category import get_all_categories, add_category, update_category, delete_category
