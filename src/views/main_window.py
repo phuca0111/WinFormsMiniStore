@@ -1,6 +1,6 @@
 import tkinter as tk
 from tkinter import ttk
-from .product_view import ProductView
+# from .product_view import ProductView
 from .customer_view import CustomerView
 from .order_view import OrderView
 
