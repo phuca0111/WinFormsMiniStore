@@ -1,0 +1,10 @@
+#các thư viện cần thiết
+#opencv-python: thư viện xử lý ảnh và video
+#pyzbar: thư viện quét mã vạch
+#tk: thư viện tkinter
+#sqlite3: thư viện xử lý cơ sở dữ liệu
+# cách chạy code pip install -r requirements.txt
+opencv-python
+pyzbar
+tk
+sqlite3
