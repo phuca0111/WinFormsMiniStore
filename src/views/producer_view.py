@@ -1,9 +1,10 @@
 import sys
 import os
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../')))
 import tkinter as tk
 from tkinter import ttk, messagebox
 from Core.producer import get_all_producers, add_producer, update_producer, delete_producer
+
 
 def load_producers(tree):
     for item in tree.get_children():
