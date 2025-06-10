@@ -15,7 +15,6 @@ CREATE TABLE nhanvien (
     phanquyen_id INTEGER,
     FOREIGN KEY (phanquyen_id) REFERENCES phanquyen(id)
 );
-
 -- Tạo bảng tài khoản đăng nhập
 CREATE TABLE taikhoan (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
