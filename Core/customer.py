@@ -68,4 +68,12 @@ class CustomerCore:
             return self.model.get_customer_by_id(id)
         except Exception as e:
             print(f"Error getting customer by ID: {e}")
-            return None 
+            return None
+
+    def get_all_customers_sample(self):
+        # Trả về danh sách khách hàng mẫu (id, tên, sdt)
+        return [
+            (1, "Nguyễn Văn A", "0123456789"),
+            (2, "Trần Thị B", "0987654321"),
+            (3, "Lê Văn C", "0912345678"),
+        ] 
