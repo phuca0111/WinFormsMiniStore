@@ -13,7 +13,7 @@ def main():
     root.title('Thanh toán hóa đơn')
     root.geometry('900x600')
 
-    # Khai báo biến ở scope cao nhất
+    # Khai báo biến ở scope cao nhất.
     tien_khach_dua = None
     tien_thoi_lai = None
 
