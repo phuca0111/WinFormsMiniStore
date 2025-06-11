@@ -13,6 +13,10 @@ def main():
     root.title('Thanh toán hóa đơn')
     root.geometry('900x600')
 
+    # Khai báo biến ở scope cao nhất
+    tien_khach_dua = None
+    tien_thoi_lai = None
+
     # Frame nhập barcode và hiển thị barcode
     frame_barcode = ttk.Frame(root)
     frame_barcode.pack(fill=tk.X, padx=10, pady=5)
@@ -226,8 +230,18 @@ def main():
                     label_change.config(text='Nhập số hợp lệ!', foreground='red')
             entry_cash.bind('<KeyRelease>', calc_change)
             def on_ok():
-                calc_change()
-                popup.destroy()
+                try:
+                    cash = float(cash_var.get().replace(',', ''))
+                    if cash < total:
+                        messagebox.showerror('Lỗi', 'Tiền khách đưa không được thấp hơn tổng tiền hóa đơn!')
+                        return
+                    nonlocal tien_khach_dua, tien_thoi_lai
+                    tien_khach_dua = cash
+                    tien_thoi_lai = cash - total
+                    result['ok'] = True
+                    popup.destroy()
+                except:
+                    messagebox.showerror('Lỗi', 'Nhập số hợp lệ!')
             ttk.Button(popup, text='OK', command=on_ok).pack(pady=10)
             entry_cash.focus_set()
     combobox_method.bind('<<ComboboxSelected>>', on_method_selected)
@@ -240,9 +254,6 @@ def main():
         if not name or not phone or not cart_items:
             messagebox.showwarning('Thiếu thông tin', 'Vui lòng nhập đầy đủ thông tin và có sản phẩm trong giỏ!')
             return
-        # Hỏi tiền khách đưa nếu là tiền mặt
-        tien_khach_dua = None
-        tien_thoi_lai = None
         if method == 'Tiền mặt':
             popup = tk.Toplevel(root)
             popup.title('Tiền khách đưa')
@@ -253,9 +264,25 @@ def main():
             entry_cash = ttk.Entry(popup, textvariable=cash_var)
             entry_cash.pack(pady=5)
             result = {'ok': False}
+            label_change = ttk.Label(popup, text='', font=('Arial', 11, 'bold'), foreground='blue')
+            label_change.pack(pady=5)
+            def calc_change(event=None):
+                try:
+                    cash = float(cash_var.get().replace(',', ''))
+                    change = cash - total
+                    if change < 0:
+                        label_change.config(text=f'Thiếu {abs(change):,.0f} VND', foreground='red')
+                    else:
+                        label_change.config(text=f'Tiền thừa: {change:,.0f} VND', foreground='blue')
+                except:
+                    label_change.config(text='Nhập số hợp lệ!', foreground='red')
+            entry_cash.bind('<KeyRelease>', calc_change)
             def on_ok():
                 try:
                     cash = float(cash_var.get().replace(',', ''))
+                    if cash < total:
+                        messagebox.showerror('Lỗi', 'Tiền khách đưa không được thấp hơn tổng tiền hóa đơn!')
+                        return
                     nonlocal tien_khach_dua, tien_thoi_lai
                     tien_khach_dua = cash
                     tien_thoi_lai = cash - total
