@@ -1,6 +1,6 @@
 # Cấu hình Database
-DB_NAME = "quanlycuahang.db"
-DB_PATH = "Database/quanlycuahang.db"
+DB_NAME = "ministore_db.sqlite"
+DB_PATH = "Database/ministore_db.sqlite"
 
 # Cấu hình kết nối
 DB_TIMEOUT = 30  # Thời gian timeout khi kết nối (giây)
