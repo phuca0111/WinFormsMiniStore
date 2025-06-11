@@ -7,7 +7,7 @@ from reportlab.pdfbase.ttfonts import TTFont
 def main():
     def start_main(user_info):
         root = tk.Tk()
-        app = MainWindow(root, user_info)
+        app = MainWindow(root)
         root.mainloop()
     show_login(start_main)
 

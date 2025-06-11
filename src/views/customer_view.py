@@ -96,8 +96,12 @@ class CustomerView:
         # Clear old data
         for item in self.tree.get_children():
             self.tree.delete(item)
+<<<<<<< HEAD
         
         # Get and display new data
+=======
+        # Get and display new data from database
+>>>>>>> phuc
         customer_list = self.core.get_all_customers()
         for customer in customer_list:
             self.tree.insert("", tk.END, values=customer)
