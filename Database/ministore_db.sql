@@ -15,6 +15,7 @@ CREATE TABLE nhanvien (
     phanquyen_id INTEGER,
     FOREIGN KEY (phanquyen_id) REFERENCES phanquyen(id)
 );
+
 -- Tạo bảng tài khoản đăng nhập
 CREATE TABLE taikhoan (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -23,6 +24,18 @@ CREATE TABLE taikhoan (
     password TEXT NOT NULL,
     trangthai TEXT DEFAULT 'active',
     FOREIGN KEY (nhanvien_id) REFERENCES nhanvien(id)
+);
+
+-- Tạo bảng khách hàng
+CREATE TABLE khachhang (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    ten TEXT NOT NULL,
+    sdt TEXT UNIQUE,
+    gmail TEXT,
+    diachi TEXT,
+    ngaysinh DATE,
+    gioitinh TEXT,
+    diem_tich_luy INTEGER DEFAULT 0
 );
 
 -- Tạo bảng kệ hàng
@@ -37,6 +50,12 @@ CREATE TABLE hangsanxuat (
     ten TEXT NOT NULL
 );
 
+-- Tạo bảng thể loại sản phẩm
+CREATE TABLE theloai (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    ten TEXT NOT NULL
+);
+
 -- Tạo bảng sản phẩm
 CREATE TABLE sanpham (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -46,8 +65,7 @@ CREATE TABLE sanpham (
     FOREIGN KEY (theloai_id) REFERENCES theloai(id),
     FOREIGN KEY (hangsanxuat_id) REFERENCES hangsanxuat(id)
 );
--- mã vạch sản phẩm (mã vạch EAN/UPC) dùng để định danh duy nhất một loại sản phẩm 
---cụ thể. Tất cả các gói mì cùng loại, cùng hương vị, cùng trọng lượng, và cùng nhà sản xuất thì sẽ có cùng một mã vạch.
+
 -- Tạo bảng biến thể sản phẩm
 CREATE TABLE sanpham_bienthe (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -75,12 +93,6 @@ CREATE TABLE nhacungcap (
     diachi TEXT,
     sdt TEXT,
     gmail TEXT
-);
-
--- Tạo bảng thể loại sản phẩm
-CREATE TABLE theloai (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    ten TEXT NOT NULL
 );
 
 -- Tạo bảng sản phẩm của nhà cung cấp

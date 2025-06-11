@@ -17,16 +17,20 @@ def update_inventory(id, bienthe_id, soluong):
         inventory.soluong = soluong
         inventory.save()
         print(f"Đã cập nhật tồn kho id {id}")
+        return True
     else:
         print(f"Không tìm thấy tồn kho với id: {id}")
+        return False
 
 def delete_inventory(id):
     inventory = Inventory.get_by_id(id)
     if inventory:
         inventory.delete()
         print(f"Đã xóa tồn kho id: {id}")
+        return True
     else:
         print(f"Không tìm thấy tồn kho với id: {id}")
+        return False
 
 def get_all_inventory():
     # Lấy danh sách các bản ghi tồn kho từ database
