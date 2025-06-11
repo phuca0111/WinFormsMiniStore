@@ -1,20 +1,24 @@
 import tkinter as tk
 from tkinter import ttk
-# from .product_view import ProductView
-from .customer_view import CustomerView
-from .order_view import OrderView
+import subprocess
+import os
+import sys
 
 
 class MainWindow:
-    def __init__(self, root):
+    def __init__(self, root, user_info=None):
         self.root = root
-        self.root.title("KPA Shop")
-        self.root.geometry("1900x1080")  # Kích thước cửa sổ ban đầu
+        self.user_info = user_info
+        self.root.title("Quản lý MiniStore")
+        self.root.geometry("1000x700")
+        self.create_menu()
+        self.main_frame = ttk.Frame(self.root)
+        self.main_frame.pack(fill=tk.BOTH, expand=True)
 
-        # Khung chứa menu
-        self.menu_frame = tk.Frame(root, bg="#2c3e50", width=200)
-        self.menu_frame.pack(side="left", fill="y")
-        self.menu_frame.pack_propagate(False)  # Ngăn khung tự co giãn
+        # Hiển thị tên nhân viên
+        if self.user_info:
+            label = ttk.Label(self.root, text=f"Xin chào, {self.user_info[1]}!", font=("Arial", 13, "bold"), foreground="blue")
+            label.pack(side=tk.TOP, pady=5)
 
         # Khởi tạo các biến trạng thái và khung submenu
         self.product_submenu_frame = None
@@ -29,7 +33,68 @@ class MainWindow:
         self.shipping_expanded = False
         self.shipping_button = None
 
-        self.create_menu_items()
+    def create_menu(self):
+        menubar = tk.Menu(self.root)
+        self.root.config(menu=menubar)
+        roles = self.user_info[2] if self.user_info else []
+        manage_menu = tk.Menu(menubar, tearoff=0)
+        menubar.add_cascade(label='Quản lý', menu=manage_menu)
+        if 'Quản lý khách hàng' in roles or 'Quản lý toàn bộ' in roles or 'Quản trị hệ thống' in roles:
+            manage_menu.add_command(label='Khách hàng', command=self.open_customer)
+        if 'Quản lý thanh toán' in roles or 'Quản lý toàn bộ' in roles or 'Quản trị hệ thống' in roles:
+            manage_menu.add_command(label='Thanh toán', command=self.open_payment)
+        if 'Quản lý sản phẩm' in roles or 'Quản lý toàn bộ' in roles or 'Quản trị hệ thống' in roles:
+            manage_menu.add_command(label='Sản phẩm', command=self.open_product)
+        if 'Quản lý loại sản phẩm' in roles or 'Quản lý toàn bộ' in roles or 'Quản trị hệ thống' in roles:
+            manage_menu.add_command(label='Loại sản phẩm', command=self.open_category)
+        if 'Quản lý biến thể sản phẩm' in roles or 'Quản lý toàn bộ' in roles or 'Quản trị hệ thống' in roles:
+            manage_menu.add_command(label='Biến thể sản phẩm', command=self.open_product_variant)
+        if 'Quản lý nhà sản xuất' in roles or 'Quản lý toàn bộ' in roles or 'Quản trị hệ thống' in roles:
+            manage_menu.add_command(label='Nhà sản xuất', command=self.open_producer)
+        if 'Quản lý đơn hàng' in roles or 'Quản lý toàn bộ' in roles or 'Quản trị hệ thống' in roles:
+            manage_menu.add_command(label='Đơn hàng', command=self.open_order)
+        if 'Quản lý tồn kho' in roles or 'Quản lý toàn bộ' in roles or 'Quản trị hệ thống' in roles:
+            manage_menu.add_command(label='Tồn kho', command=self.open_inventory)
+        if 'Quản lý tài khoản' in roles or 'Quản lý toàn bộ' in roles or 'Quản trị hệ thống' in roles:
+            manage_menu.add_command(label='Tài khoản', command=self.open_account)
+        manage_menu.add_separator()
+        manage_menu.add_command(label='Thoát', command=self.root.quit)
+
+    def open_customer(self):
+        customer_view_path = os.path.join(os.path.dirname(__file__), 'customer_view.py')
+        subprocess.Popen([sys.executable, customer_view_path])
+
+    def open_payment(self):
+        payment_view_path = os.path.join(os.path.dirname(__file__), 'payment_view.py')
+        subprocess.Popen([sys.executable, payment_view_path])
+
+    def open_product(self):
+        product_view_path = os.path.join(os.path.dirname(__file__), 'product_view.py')
+        subprocess.Popen([sys.executable, product_view_path])
+
+    def open_category(self):
+        category_view_path = os.path.join(os.path.dirname(__file__), 'category_view.py')
+        subprocess.Popen([sys.executable, category_view_path])
+
+    def open_product_variant(self):
+        product_variant_view_path = os.path.join(os.path.dirname(__file__), 'product_variant_view.py')
+        subprocess.Popen([sys.executable, product_variant_view_path])
+
+    def open_producer(self):
+        producer_view_path = os.path.join(os.path.dirname(__file__), 'producer_view.py')
+        subprocess.Popen([sys.executable, producer_view_path])
+
+    def open_order(self):
+        order_view_path = os.path.join(os.path.dirname(__file__), 'order_view.py')
+        subprocess.Popen([sys.executable, order_view_path])
+
+    def open_inventory(self):
+        inventory_view_path = os.path.join(os.path.dirname(__file__), 'inventory_view.py')
+        subprocess.Popen([sys.executable, inventory_view_path])
+
+    def open_account(self):
+        account_view_path = os.path.join(os.path.dirname(__file__), 'account_view.py')
+        subprocess.Popen([sys.executable, account_view_path])
 
     def create_menu_items(self):
         # Tạo các mục menu chính
@@ -90,7 +155,7 @@ class MainWindow:
         return button_frame
 
     def create_button(self, text, command, has_arrow=False, is_submenu=False):
-        button_frame = tk.Frame(self.menu_frame, bg="#2c3e50" if not is_submenu else "#34495e")
+        button_frame = tk.Frame(self.main_frame, bg="#2c3e50" if not is_submenu else "#34495e")
         button_frame.bind("<Button-1>", lambda e: command())
 
         text_label = tk.Label(button_frame, text=text, fg="white", bg="#2c3e50" if not is_submenu else "#34495e",
@@ -125,7 +190,7 @@ class MainWindow:
         if not self.product_expanded:
             # Tạo khung con nếu chưa tồn tại
             if self.product_submenu_frame is None:
-                self.product_submenu_frame = tk.Frame(self.menu_frame, bg="#34495e")
+                self.product_submenu_frame = tk.Frame(self.main_frame, bg="#34495e")
                 self.add_submenu_item(self.product_submenu_frame, "Danh sách sản phẩm",
                                       self.on_danh_sach_san_pham_click)
                 self.add_submenu_item(self.product_submenu_frame, "Quản lý kho", self.on_quan_ly_kho_click,
@@ -152,7 +217,7 @@ class MainWindow:
         if not self.order_expanded:
             # Tạo khung con nếu chưa tồn tại
             if self.order_submenu_frame is None:
-                self.order_submenu_frame = tk.Frame(self.menu_frame, bg="#34495e")
+                self.order_submenu_frame = tk.Frame(self.main_frame, bg="#34495e")
                 self.add_submenu_item(self.order_submenu_frame, "Danh sách đơn hàng", self.on_danh_sach_don_hang_click)
                 self.add_submenu_item(self.order_submenu_frame, "Đơn hàng chờ xử lý", self.on_don_hang_cho_xu_ly_click)
                 self.add_submenu_item(self.order_submenu_frame, "Đơn hàng đã hủy", self.on_don_hang_da_huy_click)
@@ -172,7 +237,7 @@ class MainWindow:
         if not self.shipping_expanded:
             # Tạo khung con nếu chưa tồn tại
             if self.shipping_submenu_frame is None:
-                self.shipping_submenu_frame = tk.Frame(self.menu_frame, bg="#34495e")
+                self.shipping_submenu_frame = tk.Frame(self.main_frame, bg="#34495e")
                 self.add_submenu_item(self.shipping_submenu_frame, "Quản lý vận chuyển",
                                       self.on_quan_ly_van_chuyen_click)
                 self.add_submenu_item(self.shipping_submenu_frame, "Đơn vị vận chuyển", self.on_don_vi_van_chuyen_click)
@@ -246,3 +311,15 @@ class MainWindow:
 
     def on_cai_dat_phi_ship_click(self):
         print("Click: Cài đặt phí ship")
+
+if __name__ == "__main__":
+    import sys
+    import os
+    sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../')))
+    from views.login_view import show_login
+
+    def start_main():
+        root = tk.Tk()
+        app = MainWindow(root)
+        root.mainloop()
+    show_login(start_main)
