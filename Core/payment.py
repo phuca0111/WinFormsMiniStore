@@ -174,7 +174,7 @@ def export_invoice_pdf(hoadon_id, tien_khach_dua=None, tien_thoi_lai=None, save_
     store_name = "CỬA HÀNG MINI STORE"
     store_address = "123 Đường ABC, Quận 1, TP.HCM"
     store_phone = "0123 456 789"
-    # Tạo file PDF
+    # Tạo file pdf
     if not save_path:
         # Tạo thư mục hoadon nếu chưa tồn tại
         if not os.path.exists('hoadon'):

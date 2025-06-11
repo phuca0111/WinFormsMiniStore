@@ -37,12 +37,13 @@ def main():
     label_hint = tk.Label(frame_cart, text="Mẹo: Nhấp đúp vào ô Số lượng để sửa nhanh số lượng sản phẩm. Nhập 0 để xóa sản phẩm.", 
                           font=('Arial', 9), fg='gray')
     label_hint.pack(anchor='w', padx=5, pady=(2, 0))
-    label_hint = tk.Label(frame_cart, text="Mẹo:khi nhập số điện thoại sẽ hiển thị tên khách hàng.", 
-                          font=('Arial', 9), fg='gray')
-    label_hint.pack(anchor='w', padx=5, pady=(2, 0))
     label_hint = tk.Label(frame_cart, text="Mẹo:khi không quét được mã vạch hãy nhập thủ công và ấn enter bạn nhé.", 
                           font=('Arial', 9), fg='gray')
     label_hint.pack(anchor='w', padx=5, pady=(2, 0))
+    label_hint = tk.Label(frame_cart, text="Mẹo:khi nhập số điện thoại sẽ hiển thị tên khách hàng.", 
+                          font=('Arial', 9), fg='gray')
+    label_hint.pack(anchor='w', padx=5, pady=(2, 0))
+    
     def reload_cart():
         cart_items, total = payment.reload_cart()
         for item in tree_cart.get_children():

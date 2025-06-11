@@ -1,7 +1,7 @@
 from models.payment_model import CartItem
 
 cart = []
-
+# quét mã vạch
 def get_product_by_barcode(barcode):
     import sqlite3
     conn = sqlite3.connect('Database/ministore_db.sqlite')

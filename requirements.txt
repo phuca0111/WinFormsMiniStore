@@ -8,3 +8,5 @@ opencv-python
 pyzbar
 tk
 sqlite3
+reportlab
+pytz

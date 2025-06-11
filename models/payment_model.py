@@ -9,7 +9,7 @@ class CartItem:
         self.dongia = dongia
         self.thanhtien = thanhtien
         self.barcode = barcode
-
+# thanh toán
 class Payment:
     def __init__(self, customer_name, phone, total, payment_method, cart_items):
         self.customer_name = customer_name
