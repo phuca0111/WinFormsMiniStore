@@ -247,12 +247,18 @@ def main():
     combobox_method.bind('<<ComboboxSelected>>', on_method_selected)
 
     def on_pay():
+        global tien_khach_dua, tien_thoi_lai
+        tien_khach_dua = 0
+        tien_thoi_lai = 0
         name = entry_customer.get().strip()
         phone = entry_phone.get().strip()
         method = combobox_method.get().strip()
         cart_items, total = payment.reload_cart()
-        if not name or not phone or not cart_items:
-            messagebox.showwarning('Thiếu thông tin', 'Vui lòng nhập đầy đủ thông tin và có sản phẩm trong giỏ!')
+        if not cart_items:
+            messagebox.showwarning('Thiếu thông tin', 'Vui lòng có sản phẩm trong giỏ!')
+            return
+        if not method:
+            messagebox.showwarning('Thiếu thông tin', 'Vui lòng chọn phương thức thanh toán!')
             return
         if method == 'Tiền mặt':
             popup = tk.Toplevel(root)
@@ -278,12 +284,12 @@ def main():
                     label_change.config(text='Nhập số hợp lệ!', foreground='red')
             entry_cash.bind('<KeyRelease>', calc_change)
             def on_ok():
+                global tien_khach_dua, tien_thoi_lai
                 try:
                     cash = float(cash_var.get().replace(',', ''))
                     if cash < total:
                         messagebox.showerror('Lỗi', 'Tiền khách đưa không được thấp hơn tổng tiền hóa đơn!')
                         return
-                    nonlocal tien_khach_dua, tien_thoi_lai
                     tien_khach_dua = cash
                     tien_thoi_lai = cash - total
                     result['ok'] = True
@@ -295,7 +301,7 @@ def main():
             root.wait_window(popup)
             if not result['ok']:
                 return
-        success, result = payment.process_payment(name, phone, method, cart_items, total)
+        success, result = payment.process_payment(name, phone, method, cart_items, total, tien_khach_dua, tien_thoi_lai)
         if success:
             payment.clear_cart()
             reload_cart()

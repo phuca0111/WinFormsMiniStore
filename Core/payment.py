@@ -83,40 +83,70 @@ def clear_cart():
     global cart
     cart = []
 
-def process_payment(customer_name, phone, payment_method, cart_items, total):
+def process_payment(customer_name, phone, payment_method, cart_items, total, tien_khach_dua=0, tien_thoi_lai=0):
     db_path = get_db_path()
     conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
     try:
-        # 1. Lưu khách hàng nếu chưa có
-        cursor.execute('SELECT id FROM khachhang WHERE sdt = ?', (phone,))
-        row = cursor.fetchone()
-        if row:
-            customer_id = row[0]
-        else:
-            cursor.execute('INSERT INTO khachhang (ten, sdt) VALUES (?, ?)', (customer_name, phone))
-            customer_id = cursor.lastrowid
-        # 2. Lưu hóa đơn
-        cursor.execute('INSERT INTO hoadon (nhanvien_id, ngay, tongtien) VALUES (?, datetime("now"), ?)', (1, total)) # nhanvien_id tạm thời là 1
+        # 1. Lưu khách hàng nếu có thông tin
+        customer_id = None
+        if phone:
+            cursor.execute('SELECT id FROM khachhang WHERE sdt = ?', (phone,))
+            row = cursor.fetchone()
+            if row:
+                customer_id = row[0]
+            else:
+                cursor.execute('INSERT INTO khachhang (ten, sdt) VALUES (?, ?)', (customer_name, phone))
+                customer_id = cursor.lastrowid
+
+        # 2. Tạo mã hóa đơn
+        cursor.execute('SELECT COUNT(*) FROM hoadon')
+        count = cursor.fetchone()[0]
+        ma_hoa_don = f"HD{datetime.now().strftime('%Y%m%d')}{count+1:04d}"
+
+        # Lấy thời gian hiện tại theo giờ Việt Nam
+        vn_now = (datetime.utcnow() + timedelta(hours=7)).strftime('%Y-%m-%d %H:%M:%S')
+
+        # 3. Lưu hóa đơn
+        cursor.execute('''
+            INSERT INTO hoadon (
+                ma_hoa_don, nhanvien_id, ngay, tongtien, 
+                tien_lam_tron, tien_khach_dua, tien_thoi_lai
+            ) VALUES (?, ?, ?, ?, ?, ?, ?)
+        ''', (ma_hoa_don, 1, vn_now, total, round(total), tien_khach_dua, tien_thoi_lai))
         hoadon_id = cursor.lastrowid
-        # 3. Lưu chi tiết hóa đơn, cập nhật tồn kho
+
+        # 4. Lưu chi tiết hóa đơn, cập nhật tồn kho
         for item in cart_items:
             # item: (stt, ten_sanpham, ten_bienthe, soluong, dongia, thanhtien, barcode)
             barcode = item[6]
             soluong = item[3]
+            dongia = item[4]
+            thanh_tien = item[5]
+            ten_hang = f"{item[1]} ({item[2]})"  # Tên sản phẩm (Tên biến thể)
+
             # Lấy id biến thể sản phẩm
             cursor.execute('SELECT id FROM sanpham_bienthe WHERE barcode = ?', (barcode,))
             bienthe_row = cursor.fetchone()
             if not bienthe_row:
                 continue
             bienthe_id = bienthe_row[0]
-            cursor.execute('INSERT INTO hoadon_chitiet (hoadon_id, bienthe_id, soluong, dongia) VALUES (?, ?, ?, ?)',
-                           (hoadon_id, bienthe_id, soluong, item[4]))
+
+            # Lưu chi tiết hóa đơn
+            cursor.execute('''
+                INSERT INTO hoadon_chitiet (
+                    hoadon_id, bienthe_id, ten_hang, soluong, dongia, thanh_tien
+                ) VALUES (?, ?, ?, ?, ?, ?)
+            ''', (hoadon_id, bienthe_id, ten_hang, soluong, dongia, thanh_tien))
+
             # Trừ tồn kho
             cursor.execute('UPDATE tonkho SET soluong = soluong - ? WHERE bienthe_id = ?', (soluong, bienthe_id))
-        # 4. Cập nhật điểm tích lũy (giả sử 1 điểm = 10.000đ)
-        diem = int(total // 10000)
-        cursor.execute('UPDATE khachhang SET diem_tich_luy = diem_tich_luy + ? WHERE id = ?', (diem, customer_id))
+
+        # 5. Cập nhật điểm tích lũy nếu có khách hàng
+        if customer_id:
+            diem = int(total // 10000)
+            cursor.execute('UPDATE khachhang SET diem_tich_luy = diem_tich_luy + ? WHERE id = ?', (diem, customer_id))
+
         conn.commit()
         return True, hoadon_id
     except Exception as e:

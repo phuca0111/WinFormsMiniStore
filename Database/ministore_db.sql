@@ -39,6 +39,9 @@ CREATE TABLE khachhang (
 );
 
 -- Tạo bảng kệ hàng
+-- id: tự động tăng
+-- ten: tên kệ hàng
+-- tên kệ A-2 kệ A hàng 2 từ dưới đếm lên
 CREATE TABLE kehang (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     ten TEXT NOT NULL
@@ -118,32 +121,27 @@ CREATE TABLE tonkho (
 -- Tạo bảng hóa đơn
 CREATE TABLE hoadon (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
+    ma_hoa_don TEXT,
     nhanvien_id INTEGER,
     ngay DATETIME DEFAULT CURRENT_TIMESTAMP,
     tongtien REAL,
+    tien_lam_tron INTEGER,
+    tien_khach_dua INTEGER,
+    tien_thoi_lai INTEGER,
     FOREIGN KEY (nhanvien_id) REFERENCES nhanvien(id)
 );
 
 -- Tạo bảng chi tiết hóa đơn
 CREATE TABLE hoadon_chitiet (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
     hoadon_id INTEGER,
     bienthe_id INTEGER,
+    ten_hang TEXT,
     soluong INTEGER,
     dongia REAL,
-    PRIMARY KEY (hoadon_id, bienthe_id),
+    thanh_tien REAL,
     FOREIGN KEY (hoadon_id) REFERENCES hoadon(id),
     FOREIGN KEY (bienthe_id) REFERENCES sanpham_bienthe(id)
-);
-
--- Tạo bảng thanh toán
-CREATE TABLE thanhtoan (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    nhanvien_id INTEGER,
-    sanpham_id INTEGER,
-    soluong INTEGER,
-    ngay DATETIME,
-    FOREIGN KEY (nhanvien_id) REFERENCES nhanvien(id),
-    FOREIGN KEY (sanpham_id) REFERENCES sanpham(id)
 );
 
 -- Tạo bảng log đăng nhập nhân viên
