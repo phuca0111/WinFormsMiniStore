@@ -247,7 +247,10 @@ class StoreView:
             db_path = self.db_path
             setting = SettingCore(db_path)
             setting.set_setting("selected_store_id", str(store_id))
-            tk.messagebox.showinfo("Thành công", f"Đã chọn cửa hàng: {store_names[idx]}")
+            tk.messagebox.showinfo(
+                "Đã chọn cửa hàng",
+                f"Đã chọn cửa hàng: {store_names[idx]}.\nBạn cần đăng xuất hoặc khởi động lại phần mềm để cập nhật thông tin cửa hàng mới!"
+            )
             dialog.destroy()
         
         # Nút OK căn giữa

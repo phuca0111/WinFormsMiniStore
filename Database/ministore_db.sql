@@ -82,7 +82,7 @@ CREATE TABLE sanpham_bienthe (
 -- Tạo bảng sản phẩm trên kệ
 CREATE TABLE kehang_sanpham (
     kehang_id INTEGER,
-    sanpham_id INTEGER,
+    bienthe_id INTEGER,
     soluong INTEGER DEFAULT 0,
     PRIMARY KEY (kehang_id, sanpham_id),
     FOREIGN KEY (kehang_id) REFERENCES kehang(id),

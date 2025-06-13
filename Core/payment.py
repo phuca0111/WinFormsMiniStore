@@ -88,6 +88,30 @@ def process_payment(customer_name, phone, payment_method, cart_items, total, tie
     conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
     try:
+        # Tính tổng số lượng từng biến thể trong giỏ hàng
+        variant_qty = {}
+        variant_name = {}
+        for item in cart_items:
+            barcode = item[6]
+            soluong = item[3]
+            # Lấy id biến thể sản phẩm
+            cursor.execute('SELECT id, ten_bienthe FROM sanpham_bienthe WHERE barcode = ?', (barcode,))
+            bienthe_row = cursor.fetchone()
+            if not bienthe_row:
+                continue
+            bienthe_id = bienthe_row[0]
+            ten_bienthe = bienthe_row[1]
+            if bienthe_id not in variant_qty:
+                variant_qty[bienthe_id] = 0
+                variant_name[bienthe_id] = ten_bienthe
+            variant_qty[bienthe_id] += soluong
+        # Kiểm tra tổng số lượng từng biến thể với tồn kho
+        for bienthe_id, tong_soluong in variant_qty.items():
+            cursor.execute('SELECT soluong FROM tonkho WHERE bienthe_id = ?', (bienthe_id,))
+            row = cursor.fetchone()
+            tonkho = row[0] if row else 0
+            if tong_soluong > tonkho:
+                return False, f"Tổng số lượng thanh toán của biến thể '{variant_name[bienthe_id]}' vượt quá tồn kho ({tonkho})!"
         # 1. Lưu khách hàng nếu có thông tin
         customer_id = None
         if phone:

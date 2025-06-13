@@ -78,8 +78,11 @@ class MainWindow:
             manage_menu.add_command(label='Biến thể sản phẩm', command=self.open_product_variant)
         if 'Quản lý sản phẩm' in self.permissions:
             manage_menu.add_command(label='Sản phẩm', command=self.open_product)
+        if 'Quản lý cài đặt' in self.permissions:
+            manage_menu.add_command(label='Cài đặt', command=self.open_setting_menu)
+        if 'Quản lý kệ hàng' in self.permissions:
+            manage_menu.add_command(label='Kệ hàng', command=self.open_shelf)
         manage_menu.add_separator()
-        manage_menu.add_command(label='Cài đặt', command=self.open_setting_menu)
         manage_menu.add_command(label='Thoát', command=self.root.quit)
         manage_menu.add_command(label='Đổi tài khoản', command=self.switch_account)
 
@@ -125,13 +128,19 @@ class MainWindow:
         StoreView(self.root, self.db_path)
 
     def open_setting_menu(self):
-        from src.views.setting_menu_view import SettingMenuView
+        from views.setting_menu_view import SettingMenuView
         SettingMenuView(self.root, self.db_path)
 
+    def open_shelf(self):
+        from views.shelf_menu_view import ShelfMenuView
+        ShelfMenuView(self.root, self.db_path)
+
     def switch_account(self):
+        # Đóng cửa sổ hiện tại
+        self.root.destroy()
+        # Mở lại form đăng nhập
         from views.login_view import show_login
         from main import start_app
-        self.root.destroy()
         show_login(start_app)
 
     def calc_change(self, *args):

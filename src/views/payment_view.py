@@ -7,6 +7,7 @@ import tkinter as tk
 from tkinter import ttk, messagebox
 from Core.barcode_scanner import scan_barcode
 from Core import cart, payment
+from Core.setting import SettingCore
 
 class CashPopup:
     def __init__(self, parent, total):
@@ -281,8 +282,14 @@ def main(nhanvien_id):
                 return
             tien_khach_dua = cash_popup.tien_khach_dua
             tien_thoi_lai = cash_popup.tien_thoi_lai
-        # Lấy store_id từ biến hoặc cấu hình (ví dụ: luôn lấy cửa hàng đầu tiên)
-        store_id = 1  # Hoặc lấy từ thông tin đăng nhập, cấu hình, ...
+        # Lấy store_id từ settings
+        db_path = "database/ministore_db.sqlite"  # hoặc self.db_path nếu có
+        setting = SettingCore(db_path)
+        store_id = setting.get_setting("selected_store_id")
+        if store_id is not None:
+            store_id = int(store_id)
+        else:
+            store_id = 1  # fallback nếu chưa chọn cửa hàng
         success, result = payment.process_payment(name, phone, method, cart_items, total, tien_khach_dua, tien_thoi_lai, nhanvien_id, store_id)
         if success:
             payment.clear_cart()

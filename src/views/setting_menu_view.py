@@ -8,9 +8,12 @@ class SettingMenuView:
     def __init__(self, parent, db_path):
         self.parent = parent
         self.db_path = db_path
-        self.window = tk.Toplevel(parent)
+        self.window = tk.Toplevel(parent)  # Luôn tạo Toplevel mới
         self.window.title("Cài đặt hệ thống")
         self.window.geometry("300x300")
+
+        for widget in self.window.winfo_children():
+            widget.destroy()
 
         ttk.Label(self.window, text="Chức năng cài đặt", font=("Arial", 14, "bold")).pack(pady=10)
 
@@ -19,7 +22,7 @@ class SettingMenuView:
         # Thêm các nút khác nếu cần
 
     def open_account(self):
-        AccountView(self.window)
+        AccountView(self.window)  # Mở form con với parent là cửa sổ menu cài đặt
 
     def open_store(self):
-        StoreView(self.window, self.db_path) 
+        StoreView(self.window, self.db_path)  # Mở form con với parent là cửa sổ menu cài đặt 
