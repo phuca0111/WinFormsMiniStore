@@ -128,6 +128,7 @@ CREATE TABLE hoadon (
     tien_lam_tron INTEGER,
     tien_khach_dua INTEGER,
     tien_thoi_lai INTEGER,
+    khachhang_id INTEGER,
     FOREIGN KEY (nhanvien_id) REFERENCES nhanvien(id)
 );
 
@@ -160,4 +161,39 @@ CREATE TABLE sanpham_login_log (
     login_time DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (sanpham_id) REFERENCES sanpham(id),
     FOREIGN KEY (nhanvien_id) REFERENCES nhanvien(id)
-); 
+);
+
+-- Tạo bảng thông tin cửa hàng
+CREATE TABLE thongtincuahang (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    ten_cua_hang TEXT NOT NULL,
+    dia_chi TEXT,
+    so_dien_thoai TEXT,
+    ma_so_thue TEXT,
+    website TEXT,
+    ghi_chu TEXT
+);
+
+-- Giả sử id các quyền là 1-9 như trên
+INSERT INTO nhanvien_phanquyen (nhanvien_id, phanquyen_id) VALUES (1, 1);
+INSERT INTO nhanvien_phanquyen (nhanvien_id, phanquyen_id) VALUES (1, 2);
+INSERT INTO nhanvien_phanquyen (nhanvien_id, phanquyen_id) VALUES (1, 3);
+INSERT INTO nhanvien_phanquyen (nhanvien_id, phanquyen_id) VALUES (1, 4);
+INSERT INTO nhanvien_phanquyen (nhanvien_id, phanquyen_id) VALUES (1, 5);
+INSERT INTO nhanvien_phanquyen (nhanvien_id, phanquyen_id) VALUES (1, 6);
+INSERT INTO nhanvien_phanquyen (nhanvien_id, phanquyen_id) VALUES (1, 7);
+INSERT INTO nhanvien_phanquyen (nhanvien_id, phanquyen_id) VALUES (1, 8);
+INSERT INTO nhanvien_phanquyen (nhanvien_id, phanquyen_id) VALUES (1, 9);
+
+INSERT INTO phanquyen (tenquyen) VALUES ('QUANLY_TAIKHOAN');
+INSERT INTO phanquyen (tenquyen) VALUES ('QUANLY_LOAISANPHAM');
+INSERT INTO phanquyen (tenquyen) VALUES ('QUANLY_KHACHHANG');
+INSERT INTO phanquyen (tenquyen) VALUES ('QUANLY_TONKHO');
+INSERT INTO phanquyen (tenquyen) VALUES ('QUANLY_DONHANG');
+INSERT INTO phanquyen (tenquyen) VALUES ('QUANLY_THANHTOAN');
+INSERT INTO phanquyen (tenquyen) VALUES ('QUANLY_NHASANXUAT');
+INSERT INTO phanquyen (tenquyen) VALUES ('QUANLY_BIENTHE');
+INSERT INTO phanquyen (tenquyen) VALUES ('QUANLY_SANPHAM');
+
+SELECT * FROM phanquyen;
+SELECT * FROM nhanvien_phanquyen WHERE nhanvien_id = 1; 

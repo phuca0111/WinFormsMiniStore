@@ -32,4 +32,4 @@ def check_login(username, password):
     ''', (nhanvien_id,))
     roles = [row[0] for row in cursor.fetchall()]
     conn.close()
-    return (user[0], user[1], roles)  # username, tên, [danh sách quyền] 
+    return (user[0], user[1], roles, nhanvien_id)  # username, tên, [danh sách quyền], nhanvien_id 
