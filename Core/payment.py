@@ -83,11 +83,35 @@ def clear_cart():
     global cart
     cart = []
 
-def process_payment(customer_name, phone, payment_method, cart_items, total, tien_khach_dua=0, tien_thoi_lai=0):
+def process_payment(customer_name, phone, payment_method, cart_items, total, tien_khach_dua=0, tien_thoi_lai=0, nhanvien_id=1, store_id=None):
     db_path = get_db_path()
     conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
     try:
+        # Tính tổng số lượng từng biến thể trong giỏ hàng
+        variant_qty = {}
+        variant_name = {}
+        for item in cart_items:
+            barcode = item[6]
+            soluong = item[3]
+            # Lấy id biến thể sản phẩm
+            cursor.execute('SELECT id, ten_bienthe FROM sanpham_bienthe WHERE barcode = ?', (barcode,))
+            bienthe_row = cursor.fetchone()
+            if not bienthe_row:
+                continue
+            bienthe_id = bienthe_row[0]
+            ten_bienthe = bienthe_row[1]
+            if bienthe_id not in variant_qty:
+                variant_qty[bienthe_id] = 0
+                variant_name[bienthe_id] = ten_bienthe
+            variant_qty[bienthe_id] += soluong
+        # Kiểm tra tổng số lượng từng biến thể với tồn kho
+        for bienthe_id, tong_soluong in variant_qty.items():
+            cursor.execute('SELECT soluong FROM tonkho WHERE bienthe_id = ?', (bienthe_id,))
+            row = cursor.fetchone()
+            tonkho = row[0] if row else 0
+            if tong_soluong > tonkho:
+                return False, f"Tổng số lượng thanh toán của biến thể '{variant_name[bienthe_id]}' vượt quá tồn kho ({tonkho})!"
         # 1. Lưu khách hàng nếu có thông tin
         customer_id = None
         if phone:
@@ -107,13 +131,13 @@ def process_payment(customer_name, phone, payment_method, cart_items, total, tie
         # Lấy thời gian hiện tại theo giờ Việt Nam
         vn_now = (datetime.utcnow() + timedelta(hours=7)).strftime('%Y-%m-%d %H:%M:%S')
 
-        # 3. Lưu hóa đơn
+        # 3. Lưu hóa đơn (thêm khachhang_id, store_id)
         cursor.execute('''
             INSERT INTO hoadon (
-                ma_hoa_don, nhanvien_id, ngay, tongtien, 
-                tien_lam_tron, tien_khach_dua, tien_thoi_lai
-            ) VALUES (?, ?, ?, ?, ?, ?, ?)
-        ''', (ma_hoa_don, 1, vn_now, total, round(total), tien_khach_dua, tien_thoi_lai))
+                ma_hoa_don, nhanvien_id, khachhang_id, ngay, tongtien, 
+                tien_lam_tron, tien_khach_dua, tien_thoi_lai, store_id
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ''', (ma_hoa_don, nhanvien_id, customer_id, vn_now, total, round(total), tien_khach_dua, tien_thoi_lai, store_id))
         hoadon_id = cursor.lastrowid
 
         # 4. Lưu chi tiết hóa đơn, cập nhật tồn kho
@@ -172,23 +196,29 @@ def export_invoice_pdf(hoadon_id, tien_khach_dua=None, tien_thoi_lai=None, save_
     db_path = get_db_path()
     conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
-    # Lấy thông tin hóa đơn
+    # Lấy thông tin hóa đơn (thêm store_id)
     cursor.execute('''
-        SELECT hd.id, hd.ngay, hd.tongtien, kh.ten, kh.sdt, tk.username, hd.nhanvien_id
+        SELECT hd.id, hd.ngay, hd.tongtien, kh.ten, kh.sdt, tk.username, nv.ten, hd.store_id
         FROM hoadon hd
         LEFT JOIN nhanvien nv ON hd.nhanvien_id = nv.id
         LEFT JOIN taikhoan tk ON tk.nhanvien_id = nv.id
-        LEFT JOIN khachhang kh ON kh.id = (
-            SELECT id FROM khachhang WHERE sdt = (
-                SELECT sdt FROM khachhang WHERE id = kh.id LIMIT 1
-            ) LIMIT 1
-        )
+        LEFT JOIN khachhang kh ON hd.khachhang_id = kh.id
         WHERE hd.id = ?
     ''', (hoadon_id,))
     hoadon = cursor.fetchone()
     if not hoadon:
         conn.close()
         return None
+    store_id = hoadon[7]
+    # Lấy thông tin cửa hàng từ bảng thongtincuahang
+    store_name = "CỬA HÀNG MINI STORE"
+    store_address = ""
+    store_phone = ""
+    if store_id:
+        cursor.execute("SELECT ten_cua_hang, dia_chi, so_dien_thoai FROM thongtincuahang WHERE id = ?", (store_id,))
+        store_info = cursor.fetchone()
+        if store_info:
+            store_name, store_address, store_phone = store_info
     # Lấy chi tiết hóa đơn
     cursor.execute('''
         SELECT sp.ten, bt.ten_bienthe, ct.soluong, ct.dongia
@@ -200,10 +230,6 @@ def export_invoice_pdf(hoadon_id, tien_khach_dua=None, tien_thoi_lai=None, save_
     chitiet = cursor.fetchall()
     print('Chi tiết hóa đơn:', chitiet)
     conn.close()
-    # Thông tin cửa hàng
-    store_name = "CỬA HÀNG MINI STORE"
-    store_address = "123 Đường ABC, Quận 1, TP.HCM"
-    store_phone = "0123 456 789"
     # Tạo file pdf
     if not save_path:
         # Tạo thư mục hoadon nếu chưa tồn tại
@@ -214,10 +240,10 @@ def export_invoice_pdf(hoadon_id, tien_khach_dua=None, tien_thoi_lai=None, save_
     width, height = A4
     y = height - 20*mm
     c.setFont("DejaVu", 16)
-    c.drawCentredString(width/2, y, "PHIẾU THANH TOÁN MINI STORE")
+    c.drawCentredString(width/2, y, f"PHIẾU THANH TOÁN {store_name.upper()}")
     y -= 8*mm
     c.setFont("DejaVu", 10)
-    c.drawCentredString(width/2, y, store_address + " | ĐT: " + store_phone)
+    c.drawCentredString(width/2, y, (store_address or "") + (f" | ĐT: {store_phone}" if store_phone else ""))
     y -= 8*mm
     c.setFont("DejaVu", 10)
     c.drawString(15*mm, y, f"Số HĐ: {hoadon[0]}")
@@ -232,7 +258,10 @@ def export_invoice_pdf(hoadon_id, tien_khach_dua=None, tien_thoi_lai=None, save_
     c.drawString(70*mm, y, f"Ngày: {ngay_vn}")
     c.drawString(130*mm, y, f"NV: {hoadon[5] if hoadon[5] else hoadon[6]}")
     y -= 8*mm
-    c.drawString(15*mm, y, f"Khách hàng: {hoadon[3]} - {hoadon[4]}")
+    # Thông tin khách hàng
+    khach_hang = hoadon[3] if hoadon[3] else "---"
+    sdt = hoadon[4] if hoadon[4] else ""
+    c.drawString(15*mm, y, f"Khách hàng: {khach_hang}{(' - ' + sdt) if sdt else ''}")
     y -= 8*mm
     c.line(15*mm, y, 195*mm, y)
     y -= 6*mm

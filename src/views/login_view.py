@@ -5,6 +5,7 @@ import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../')))
 from Core import login
 from Core.customer import CustomerCore
+from views.main_window import MainWindow
 
 def show_login(on_success):
     login_win = tk.Tk()
@@ -38,4 +39,17 @@ def show_login(on_success):
     btn_login = ttk.Button(login_win, text='Đăng nhập', command=do_login)
     btn_login.pack(pady=15)
     entry_user.focus_set()
-    login_win.mainloop() 
+    login_win.mainloop()
+
+def start_app(user_info):
+    nhanvien_id = user_info[3]
+    ten_nhanvien = user_info[1]
+    root = tk.Tk()
+    app = MainWindow(root, nhanvien_id, ten_nhanvien)
+    root.mainloop()
+
+def main():
+    show_login(start_app)
+
+if __name__ == "__main__":
+    main() 
