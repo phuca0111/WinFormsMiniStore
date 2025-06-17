@@ -11,3 +11,7 @@ tk
 sqlite3
 reportlab
 pytz
+#thư viện để xử lý dữ liệu excel
+pandas
+#thư viện để vẽ biểu đồ
+matplotlib

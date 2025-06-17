@@ -15,24 +15,26 @@ class SupplierProductCore:
         return SupplierProduct.get_by_id(id)
 
     @staticmethod
-    def create_supplier_product(nhacungcap_id, bienthe_id, soluong_nhap, gia_nhap):
+    def create_supplier_product(nhacungcap_id, bienthe_id, soluong_nhap, gia_nhap, han_su_dung=None):
         supplier_product = SupplierProduct(
             nhacungcap_id=nhacungcap_id,
             bienthe_id=bienthe_id,
             soluong_nhap=soluong_nhap,
-            gia_nhap=gia_nhap
+            gia_nhap=gia_nhap,
+            han_su_dung=han_su_dung
         )
         supplier_product.save()
         return supplier_product
 
     @staticmethod
-    def update_supplier_product(id, nhacungcap_id, bienthe_id, soluong_nhap, gia_nhap):
+    def update_supplier_product(id, nhacungcap_id, bienthe_id, soluong_nhap, gia_nhap, han_su_dung=None):
         supplier_product = SupplierProduct.get_by_id(id)
         if supplier_product:
             supplier_product.nhacungcap_id = nhacungcap_id
             supplier_product.bienthe_id = bienthe_id
             supplier_product.soluong_nhap = soluong_nhap
             supplier_product.gia_nhap = gia_nhap
+            supplier_product.han_su_dung = han_su_dung
             supplier_product.save()
             return True
         return False

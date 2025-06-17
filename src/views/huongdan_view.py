@@ -13,7 +13,7 @@ class HuongDanView(ttk.Frame):
             "2. nếu thấy dữ liệu chưa được load cần tắt chức năng đó và mở lại\n"
             "3. Để nhập hàng: Vào menu 'Nhập hàng', chọn nhà cung cấp, biến thể sản phẩm, nhập số lượng và giá nhập, sau đó nhấn 'Thêm'.\n"
             "4. Để sửa hoặc xóa: Chọn dòng cần sửa/xóa và nhấn nút tương ứng.\n"
-            "5. Các chức năng khác thao tác tương tự.\n"
+            "5. mật khẩu mặc định là 123456.\n"
             "6. Nếu gặp khó khăn, liên hệ quản trị viên để được hỗ trợ."
             
         )

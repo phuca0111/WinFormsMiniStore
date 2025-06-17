@@ -46,6 +46,11 @@ class SupplierProductView:
         self.price_var = StringVar()
         Entry(self.form_frame, textvariable=self.price_var).grid(row=3, column=1, padx=5, pady=5, sticky=W)
 
+        # Hạn sử dụng
+        Label(self.form_frame, text="Hạn sử dụng (YYYY-MM-DD):").grid(row=4, column=0, padx=5, pady=5, sticky=W)
+        self.expiry_var = StringVar()
+        Entry(self.form_frame, textvariable=self.expiry_var).grid(row=4, column=1, padx=5, pady=5, sticky=W)
+
         # Frame cho các nút
         self.button_frame = Frame(self.main_frame)
         self.button_frame.pack(fill=X, padx=5, pady=5)
@@ -57,26 +62,30 @@ class SupplierProductView:
         Button(self.button_frame, text="Làm mới", command=self.load_data).pack(side=LEFT, padx=5)
 
         # Treeview để hiển thị dữ liệu
-        self.tree = ttk.Treeview(self.main_frame, columns=("ID", "Nhà cung cấp", "Sản phẩm", "Biến thể", 
-                                                          "Ngày nhập", "Số lượng", "Giá nhập"),
+        self.tree = ttk.Treeview(self.main_frame, columns=("ID", "Mã lô", "Nhà cung cấp", "Sản phẩm", "Biến thể", 
+                                                          "Ngày nhập", "Số lượng", "Giá nhập", "Hạn sử dụng"),
                                  show="headings")
         
         # Định dạng các cột
         self.tree.heading("ID", text="ID")
+        self.tree.heading("Mã lô", text="Mã lô")
         self.tree.heading("Nhà cung cấp", text="Nhà cung cấp")
         self.tree.heading("Sản phẩm", text="Sản phẩm")
         self.tree.heading("Biến thể", text="Biến thể")
         self.tree.heading("Ngày nhập", text="Ngày nhập")
         self.tree.heading("Số lượng", text="Số lượng")
         self.tree.heading("Giá nhập", text="Giá nhập")
+        self.tree.heading("Hạn sử dụng", text="Hạn sử dụng")
 
         self.tree.column("ID", width=50)
+        self.tree.column("Mã lô", width=120)
         self.tree.column("Nhà cung cấp", width=150)
         self.tree.column("Sản phẩm", width=150)
         self.tree.column("Biến thể", width=150)
         self.tree.column("Ngày nhập", width=150)
         self.tree.column("Số lượng", width=100)
         self.tree.column("Giá nhập", width=100)
+        self.tree.column("Hạn sử dụng", width=150)
 
         self.tree.pack(fill=BOTH, expand=True, padx=5, pady=5)
 
@@ -121,16 +130,29 @@ class SupplierProductView:
         if selected_item:
             values = self.tree.item(selected_item[0])['values']
             # Cập nhật các trường nhập liệu
-            self.supplier_var.set(f"{values[1]}")
-            self.variant_var.set(f"{values[2]} ({values[3]})")
-            self.quantity_var.set(values[5])
-            self.price_var.set(values[6])
+            # Đặt lại supplier_var đúng định dạng 'id - tên'
+            for v in self.supplier_combo['values']:
+                if v.endswith(f"- {values[2]}"):
+                    self.supplier_var.set(v)
+                    break
+            # Đặt lại variant_var đúng định dạng 'id - tên_bienthe'
+            for v in self.variant_combo['values']:
+                if v.endswith(f"- {values[4]}"):
+                    self.variant_var.set(v)
+                    break
+            self.quantity_var.set(values[6])
+            self.price_var.set(values[7])
+            if len(values) > 8:
+                self.expiry_var.set(values[8])
+            else:
+                self.expiry_var.set("")
 
     def clear_form(self):
         self.supplier_var.set("")
         self.variant_var.set("")
         self.quantity_var.set("")
         self.price_var.set("")
+        self.expiry_var.set("")
 
     def add_supplier_product(self):
         try:
@@ -139,9 +161,9 @@ class SupplierProductView:
             variant_id = int(self.variant_var.get().split(" - ")[0])
             quantity = int(self.quantity_var.get())
             price = float(self.price_var.get())
-
+            expiry = self.expiry_var.get().strip() or None
             # Thêm mới
-            self.core.create_supplier_product(supplier_id, variant_id, quantity, price)
+            self.core.create_supplier_product(supplier_id, variant_id, quantity, price, expiry)
             messagebox.showinfo("Thành công", "Thêm nhập hàng thành công!")
             self.clear_form()
             self.load_data()
@@ -154,15 +176,14 @@ class SupplierProductView:
             if id is None:
                 messagebox.showwarning("Cảnh báo", "Vui lòng chọn một bản ghi để sửa!")
                 return
-
             # Lấy ID từ combobox
             supplier_id = int(self.supplier_var.get().split(" - ")[0])
             variant_id = int(self.variant_var.get().split(" - ")[0])
             quantity = int(self.quantity_var.get())
             price = float(self.price_var.get())
-
+            expiry = self.expiry_var.get().strip() or None
             # Cập nhật
-            if self.core.update_supplier_product(id, supplier_id, variant_id, quantity, price):
+            if self.core.update_supplier_product(id, supplier_id, variant_id, quantity, price, expiry):
                 messagebox.showinfo("Thành công", "Cập nhật nhập hàng thành công!")
                 self.clear_form()
                 self.load_data()
