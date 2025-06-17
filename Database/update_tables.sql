@@ -13,6 +13,11 @@ CREATE TABLE hoadon_chitiet (
     soluong INTEGER,
     dongia REAL,
     thanh_tien REAL,
+    gia_nhap REAL,
+    loi_lo REAL,
     FOREIGN KEY (hoadon_id) REFERENCES hoadon(id),
     FOREIGN KEY (bienthe_id) REFERENCES sanpham_bienthe(id)
-); 
+);
+
+-- Thêm cột gia_nhap vào bảng nhacungcap_sanpham
+ALTER TABLE nhacungcap_sanpham ADD COLUMN gia_nhap REAL; 

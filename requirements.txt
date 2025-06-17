@@ -4,6 +4,7 @@
 #tk: thư viện tkinter
 #sqlite3: thư viện xử lý cơ sở dữ liệu
 # cách chạy code pip install -r requirements.txt
+python 3.13.3
 opencv-python
 pyzbar
 tk

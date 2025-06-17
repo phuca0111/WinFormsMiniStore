@@ -105,6 +105,7 @@ CREATE TABLE nhacungcap_sanpham (
     bienthe_id INTEGER,
     ngaynhap DATETIME DEFAULT CURRENT_TIMESTAMP,
     soluong_nhap INTEGER DEFAULT 0,
+    gia_nhap REAL,
     FOREIGN KEY (nhacungcap_id) REFERENCES nhacungcap(id),
     FOREIGN KEY (bienthe_id) REFERENCES sanpham_bienthe(id)
 );
@@ -141,6 +142,8 @@ CREATE TABLE hoadon_chitiet (
     soluong INTEGER,
     dongia REAL,
     thanh_tien REAL,
+    gia_nhap REAL,
+    loi_nhap REAL,
     FOREIGN KEY (hoadon_id) REFERENCES hoadon(id),
     FOREIGN KEY (bienthe_id) REFERENCES sanpham_bienthe(id)
 );

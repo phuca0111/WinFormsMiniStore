@@ -5,6 +5,13 @@ import os
 import sys
 import sqlite3
 
+# Thêm đường dẫn gốc vào sys.path
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
+from src.views.supplier_view import SupplierView
+from src.views.supplier_product_view import SupplierProductView
+from src.views.huongdan_view import HuongDanView
+from src.views.thongke_loilo_view import ThongKeLoiLoView
+
 
 class MainWindow:
     def __init__(self, root, nhanvien_id, ten_nhanvien, db_path=None):
@@ -23,6 +30,12 @@ class MainWindow:
         self.label_hello.pack(pady=10)
         self.permissions = self.get_permissions()
         self.create_menu()
+        # Thêm nút Hướng dẫn ngoài giao diện
+        self.button_huongdan = ttk.Button(self.root, text="Hướng dẫn", command=self.open_huongdan)
+        self.button_huongdan.pack(anchor="ne", padx=10, pady=5)
+        # Thêm nút Thống kê lời lỗ dưới chữ Menu
+        self.button_loilo = ttk.Button(self.root, text="Thống kê lời lỗ", command=self.open_loilo)
+        self.button_loilo.pack(anchor="nw", padx=10, pady=(35, 5))
         self.main_frame = ttk.Frame(self.root)
         self.main_frame.pack(fill=tk.BOTH, expand=True)
 
@@ -78,6 +91,10 @@ class MainWindow:
             manage_menu.add_command(label='Biến thể sản phẩm', command=self.open_product_variant)
         if 'Quản lý sản phẩm' in self.permissions:
             manage_menu.add_command(label='Sản phẩm', command=self.open_product)
+        if 'Quản lý nhà cung cấp' in self.permissions:
+            manage_menu.add_command(label='Nhà cung cấp', command=self.open_supplier)
+        if 'Quản lý nhập hàng' in self.permissions:
+            manage_menu.add_command(label='Nhập hàng', command=self.open_supplier_product)
         if 'Quản lý cài đặt' in self.permissions:
             manage_menu.add_command(label='Cài đặt', command=self.open_setting_menu)
         if 'Quản lý kệ hàng' in self.permissions:
@@ -122,6 +139,14 @@ class MainWindow:
         product_view_path = os.path.join(os.path.dirname(__file__), 'product_view.py')
         subprocess.Popen([sys.executable, product_view_path])
 
+    def open_supplier(self):
+        """Mở cửa sổ quản lý nhà cung cấp"""
+        # Xóa các widget cũ trong main_frame
+        for widget in self.main_frame.winfo_children():
+            widget.destroy()
+        # Tạo và hiển thị giao diện nhà cung cấp
+        SupplierView(self.main_frame).pack(fill=tk.BOTH, expand=True)
+
     def open_store(self):
         """Mở cửa sổ quản lý cửa hàng"""
         from src.views.store_view import StoreView
@@ -134,6 +159,21 @@ class MainWindow:
     def open_shelf(self):
         from views.shelf_menu_view import ShelfMenuView
         ShelfMenuView(self.root, self.db_path)
+
+    def open_supplier_product(self):
+        for widget in self.main_frame.winfo_children():
+            widget.destroy()
+        SupplierProductView(self.main_frame)
+
+    def open_huongdan(self):
+        for widget in self.main_frame.winfo_children():
+            widget.destroy()
+        HuongDanView(self.main_frame)
+
+    def open_loilo(self):
+        for widget in self.main_frame.winfo_children():
+            widget.destroy()
+        ThongKeLoiLoView(self.main_frame)
 
     def switch_account(self):
         # Đóng cửa sổ hiện tại

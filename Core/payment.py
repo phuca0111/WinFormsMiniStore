@@ -83,6 +83,33 @@ def clear_cart():
     global cart
     cart = []
 
+def get_fifo_gia_nhap(cursor, bienthe_id, soluong_ban):
+    '''
+    Trả về giá nhập trung bình theo FIFO cho số lượng bán của một biến thể sản phẩm.
+    '''
+    cursor.execute('''
+        SELECT id, soluong_nhap, gia_nhap, ngaynhap
+        FROM nhacungcap_sanpham
+        WHERE bienthe_id = ?
+        ORDER BY ngaynhap ASC, id ASC
+    ''', (bienthe_id,))
+    rows = cursor.fetchall()
+    so_luong_can = soluong_ban
+    tong_chi_phi = 0
+    tong_so_luong = 0
+    for row in rows:
+        soluong_nhap = row[1]
+        gia_nhap = row[2]
+        if so_luong_can <= 0:
+            break
+        lay_tu_lo = min(so_luong_can, soluong_nhap)
+        tong_chi_phi += lay_tu_lo * gia_nhap
+        tong_so_luong += lay_tu_lo
+        so_luong_can -= lay_tu_lo
+    if tong_so_luong == 0:
+        return 0
+    return tong_chi_phi / tong_so_luong
+
 def process_payment(customer_name, phone, payment_method, cart_items, total, tien_khach_dua=0, tien_thoi_lai=0, nhanvien_id=1, store_id=None):
     db_path = get_db_path()
     conn = sqlite3.connect(db_path)
@@ -156,12 +183,15 @@ def process_payment(customer_name, phone, payment_method, cart_items, total, tie
                 continue
             bienthe_id = bienthe_row[0]
 
+            # Tính giá nhập FIFO
+            gia_nhap_fifo = get_fifo_gia_nhap(cursor, bienthe_id, soluong)
+
             # Lưu chi tiết hóa đơn
             cursor.execute('''
                 INSERT INTO hoadon_chitiet (
-                    hoadon_id, bienthe_id, ten_hang, soluong, dongia, thanh_tien
-                ) VALUES (?, ?, ?, ?, ?, ?)
-            ''', (hoadon_id, bienthe_id, ten_hang, soluong, dongia, thanh_tien))
+                    hoadon_id, bienthe_id, ten_hang, soluong, dongia, thanh_tien, gia_nhap
+                ) VALUES (?, ?, ?, ?, ?, ?, ?)
+            ''', (hoadon_id, bienthe_id, ten_hang, soluong, dongia, thanh_tien, gia_nhap_fifo))
 
             # Trừ tồn kho
             cursor.execute('UPDATE tonkho SET soluong = soluong - ? WHERE bienthe_id = ?', (soluong, bienthe_id))
