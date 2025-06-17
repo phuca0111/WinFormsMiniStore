@@ -1,6 +1,7 @@
 import sqlite3
 import os
-
+from datetime import datetime, timedelta
+#
 class AccountModel:
     def __init__(self, db_path=None):
         if db_path:
@@ -12,7 +13,10 @@ class AccountModel:
         try:
             conn = sqlite3.connect(self.db_path)
             cursor = conn.cursor()
-            cursor.execute('INSERT INTO nhanvien_login_log (nhanvien_id) VALUES (?)', (nhanvien_id,))
+            # Lấy giờ Việt Nam
+            vn_time = datetime.utcnow() + timedelta(hours=7)
+            vn_time_str = vn_time.strftime('%Y-%m-%d %H:%M:%S')
+            cursor.execute('INSERT INTO nhanvien_login_log (nhanvien_id, login_time) VALUES (?, ?)', (nhanvien_id, vn_time_str))
             conn.commit()
             conn.close()
             return True
