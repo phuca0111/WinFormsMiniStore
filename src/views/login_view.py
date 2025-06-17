@@ -6,6 +6,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../'
 from Core import login
 from Core.customer import CustomerCore
 from views.main_window import MainWindow
+from models.account_model import AccountModel
 
 def show_login(on_success):
     login_win = tk.Tk()
@@ -31,6 +32,9 @@ def show_login(on_success):
             return
         user_info = login.check_login(username, password)
         if user_info:
+            # Ghi log đăng nhập vào bảng nhanvien_login_log
+            nhanvien_id = user_info[3]
+            AccountModel().log_login(nhanvien_id)
             login_win.destroy()
             on_success(user_info)
         else:

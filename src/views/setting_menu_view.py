@@ -22,6 +22,8 @@ class SettingMenuView:
         # Thêm các nút khác nếu cần
 
     def open_account(self):
+        for widget in self.window.winfo_children():
+            widget.destroy()
         AccountView(self.window)  # Mở form con với parent là cửa sổ menu cài đặt
 
     def open_store(self):

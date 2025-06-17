@@ -177,6 +177,19 @@ CREATE TABLE thongtincuahang (
     ghi_chu TEXT
 );
 
+-- Tạo bảng log nhập hàng
+CREATE TABLE log_nhap_hang (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    ngay_gio_nhap TEXT NOT NULL,
+    nguoi_nhap TEXT NOT NULL,
+    ma_san_pham TEXT NOT NULL,
+    ten_san_pham TEXT NOT NULL,
+    so_luong INTEGER NOT NULL,
+    gia_nhap REAL NOT NULL,
+    so_lo TEXT NOT NULL,
+    han_dung TEXT
+);
+
 -- Giả sử id các quyền là 1-9 như trên
 INSERT INTO nhanvien_phanquyen (nhanvien_id, phanquyen_id) VALUES (1, 1);
 INSERT INTO nhanvien_phanquyen (nhanvien_id, phanquyen_id) VALUES (1, 2);

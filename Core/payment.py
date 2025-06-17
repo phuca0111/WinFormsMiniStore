@@ -11,6 +11,7 @@ import pytz
 from datetime import datetime, timedelta
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
+from Core.edit_delete_log_core import log_ban_hang
 
 cart = []
 
@@ -83,14 +84,15 @@ def clear_cart():
     global cart
     cart = []
 
-def get_fifo_gia_nhap(cursor, bienthe_id, soluong_ban):
+def get_fifo_gia_nhap_and_update(cursor, bienthe_id, soluong_ban):
     '''
-    Trả về giá nhập trung bình theo FIFO cho số lượng bán của một biến thể sản phẩm.
+    Trả về giá nhập trung bình theo FIFO cho số lượng bán của một biến thể sản phẩm,
+    đồng thời cập nhật so_luong_con_lai cho từng lô.
     '''
     cursor.execute('''
-        SELECT id, soluong_nhap, gia_nhap, ngaynhap
+        SELECT id, so_luong_con_lai, gia_nhap
         FROM nhacungcap_sanpham
-        WHERE bienthe_id = ?
+        WHERE bienthe_id = ? AND so_luong_con_lai > 0
         ORDER BY ngaynhap ASC, id ASC
     ''', (bienthe_id,))
     rows = cursor.fetchall()
@@ -98,13 +100,16 @@ def get_fifo_gia_nhap(cursor, bienthe_id, soluong_ban):
     tong_chi_phi = 0
     tong_so_luong = 0
     for row in rows:
-        soluong_nhap = row[1]
+        lo_id = row[0]
+        so_luong_con_lai = row[1]
         gia_nhap = row[2]
         if so_luong_can <= 0:
             break
-        lay_tu_lo = min(so_luong_can, soluong_nhap)
+        lay_tu_lo = min(so_luong_can, so_luong_con_lai)
         tong_chi_phi += lay_tu_lo * gia_nhap
         tong_so_luong += lay_tu_lo
+        # Cập nhật lại số lượng còn lại của lô
+        cursor.execute('UPDATE nhacungcap_sanpham SET so_luong_con_lai = so_luong_con_lai - ? WHERE id = ?', (lay_tu_lo, lo_id))
         so_luong_can -= lay_tu_lo
     if tong_so_luong == 0:
         return 0
@@ -183,8 +188,8 @@ def process_payment(customer_name, phone, payment_method, cart_items, total, tie
                 continue
             bienthe_id = bienthe_row[0]
 
-            # Tính giá nhập FIFO
-            gia_nhap_fifo = get_fifo_gia_nhap(cursor, bienthe_id, soluong)
+            # Tính giá nhập FIFO và cập nhật tồn kho từng lô
+            gia_nhap_fifo = get_fifo_gia_nhap_and_update(cursor, bienthe_id, soluong)
 
             # Lưu chi tiết hóa đơn
             cursor.execute('''
@@ -193,8 +198,7 @@ def process_payment(customer_name, phone, payment_method, cart_items, total, tie
                 ) VALUES (?, ?, ?, ?, ?, ?, ?)
             ''', (hoadon_id, bienthe_id, ten_hang, soluong, dongia, thanh_tien, gia_nhap_fifo))
 
-            # Trừ tồn kho
-            cursor.execute('UPDATE tonkho SET soluong = soluong - ? WHERE bienthe_id = ?', (soluong, bienthe_id))
+            # Không cần trừ tồn kho tổng nữa vì đã trừ theo lô
 
         # 5. Cập nhật điểm tích lũy nếu có khách hàng
         if customer_id:
@@ -202,6 +206,20 @@ def process_payment(customer_name, phone, payment_method, cart_items, total, tie
             cursor.execute('UPDATE khachhang SET diem_tich_luy = diem_tich_luy + ? WHERE id = ?', (diem, customer_id))
 
         conn.commit()
+        # Lấy tên nhân viên thao tác từ nhanvien_id
+        cursor.execute('SELECT ten FROM nhanvien WHERE id = ?', (nhanvien_id,))
+        row_nv = cursor.fetchone()
+        nguoi_thao_tac = row_nv[0] if row_nv else 'Chưa xác định'
+        # Ghi log bán hàng cho từng sản phẩm
+        for item in cart_items:
+            # item: (stt, ten_sanpham, ten_bienthe, soluong, dongia, thanhtien, barcode)
+            ma_san_pham = item[6]
+            ten_san_pham = f"{item[1]} ({item[2]})"
+            so_luong = item[3]
+            don_gia = item[4]
+            thanh_tien = item[5]
+            loai_xuat = 'bán'
+            log_ban_hang(nguoi_thao_tac, ma_san_pham, ten_san_pham, so_luong, don_gia, thanh_tien, loai_xuat)
         return True, hoadon_id
     except Exception as e:
         conn.rollback()

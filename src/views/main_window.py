@@ -10,7 +10,10 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')
 from src.views.supplier_view import SupplierView
 from src.views.supplier_product_view import SupplierProductView
 from src.views.huongdan_view import HuongDanView
-from src.views.thongke_loilo_view import ThongKeLoiLoView
+from src.views.thongke_loilo_view import ThongKeTongHopView
+from src.views.canhbao_hansudung_view import CanhBaoHanSuDungView
+from src.views.inventory_batch_view import InventoryBatchView
+from src.views.phieu_tieu_huy_report_view import PhieuTieuHuyReportView
 
 
 class MainWindow:
@@ -34,8 +37,11 @@ class MainWindow:
         self.button_huongdan = ttk.Button(self.root, text="Hướng dẫn", command=self.open_huongdan)
         self.button_huongdan.pack(anchor="ne", padx=10, pady=5)
         # Thêm nút Thống kê lời lỗ dưới chữ Menu
-        self.button_loilo = ttk.Button(self.root, text="Thống kê lời lỗ", command=self.open_loilo)
-        self.button_loilo.pack(anchor="nw", padx=10, pady=(35, 5))
+        # self.button_loilo = ttk.Button(self.root, text="Thống kê lời lỗ", command=self.open_loilo)
+        # self.button_loilo.pack(anchor="nw", padx=10, pady=(35, 5))
+        # Thêm nút Cảnh báo hết hạn
+        # self.button_canhbao = ttk.Button(self.root, text="Cảnh báo hết hạn", command=self.open_canhbao)
+        # self.button_canhbao.pack(anchor="nw", padx=10, pady=(5, 5))
         self.main_frame = ttk.Frame(self.root)
         self.main_frame.pack(fill=tk.BOTH, expand=True)
 
@@ -72,17 +78,27 @@ class MainWindow:
         self.root.config(menu=menubar)
         manage_menu = tk.Menu(menubar, tearoff=0)
         menubar.add_cascade(label='Menu', menu=manage_menu)
-        # Xóa mục 'Tài khoản' khỏi menu chính
-        # if 'Quản lý tài khoản' in self.permissions:
-        #     manage_menu.add_command(label='Tài khoản', command=self.open_account)
+        # Thêm mục Thống kê nếu có quyền
+        if 'Xem thống kê' in self.permissions or 'Quản lý thống kê' in self.permissions:
+            menubar.add_command(label='Thống kê', command=self.open_thongke_tonghop)
         if 'Quản lý loại sản phẩm' in self.permissions:
             manage_menu.add_command(label='Loại sản phẩm', command=self.open_category)
         if 'Quản lý khách hàng' in self.permissions:
             manage_menu.add_command(label='Khách hàng', command=self.open_customer)
         if 'Quản lý tồn kho' in self.permissions:
             manage_menu.add_command(label='Tồn kho', command=self.open_inventory)
+            if 'Xem tồn kho chi tiết theo lô' in self.permissions or 'Quản lý tồn kho' in self.permissions:
+                manage_menu.add_command(label='Tồn kho chi tiết theo lô', command=self.open_inventory_batch)
+            if 'Xem báo cáo tiêu hủy' in self.permissions or 'Quản lý tồn kho' in self.permissions:
+                manage_menu.add_command(label='Báo cáo tiêu hủy', command=self.open_phieu_tieu_huy_report)
+            if 'Xem lịch sử nhập hàng' in self.permissions:
+                manage_menu.add_command(label='Lịch sử nhập hàng', command=self.open_import_log)
+            if 'Xem lịch sử chỉnh sửa/xóa' in self.permissions:
+                manage_menu.add_command(label='Lịch sử chỉnh sửa/xóa', command=self.open_edit_delete_log)
         if 'Quản lý đơn hàng' in self.permissions:
             manage_menu.add_command(label='Đơn hàng', command=self.open_order)
+            if 'Xem lịch sử bán hàng' in self.permissions:
+                manage_menu.add_command(label='Lịch sử bán hàng', command=self.open_log_ban_hang)
         if 'Quản lý thanh toán' in self.permissions:
             manage_menu.add_command(label='Thanh toán', command=self.open_payment)
         if 'Quản lý nhà sản xuất' in self.permissions:
@@ -142,8 +158,7 @@ class MainWindow:
     def open_supplier(self):
         """Mở cửa sổ quản lý nhà cung cấp"""
         # Xóa các widget cũ trong main_frame
-        for widget in self.main_frame.winfo_children():
-            widget.destroy()
+        self.clear_main_frame()
         # Tạo và hiển thị giao diện nhà cung cấp
         SupplierView(self.main_frame).pack(fill=tk.BOTH, expand=True)
 
@@ -161,19 +176,47 @@ class MainWindow:
         ShelfMenuView(self.root, self.db_path)
 
     def open_supplier_product(self):
-        for widget in self.main_frame.winfo_children():
-            widget.destroy()
+        self.clear_main_frame()
         SupplierProductView(self.main_frame)
 
     def open_huongdan(self):
-        for widget in self.main_frame.winfo_children():
-            widget.destroy()
+        self.clear_main_frame()
         HuongDanView(self.main_frame)
 
     def open_loilo(self):
-        for widget in self.main_frame.winfo_children():
-            widget.destroy()
-        ThongKeLoiLoView(self.main_frame)
+        self.clear_main_frame()
+        ThongKeTongHopView(self.main_frame, self.db_path)
+
+    def open_canhbao(self):
+        self.clear_main_frame()
+        CanhBaoHanSuDungView(self.main_frame)
+
+    def open_inventory_batch(self):
+        self.clear_main_frame()
+        InventoryBatchView(self.main_frame)
+
+    def open_phieu_tieu_huy_report(self):
+        self.clear_main_frame()
+        PhieuTieuHuyReportView(self.main_frame)
+
+    def open_thongke_tonghop(self):
+        self.clear_main_frame()
+        ThongKeTongHopView(self.main_frame, self.db_path)
+
+    def open_import_log(self):
+        from src.views.import_log_view import ImportLogView
+        self.clear_main_frame()
+        ImportLogView(self.main_frame)
+
+    def open_edit_delete_log(self):
+        from src.views.edit_delete_log_view import EditDeleteLogView
+        self.clear_main_frame()
+        EditDeleteLogView(self.main_frame)
+
+    def open_log_ban_hang(self):
+        from views.log_ban_hang_view import LogBanHangView
+        self.clear_main_frame()
+        LogBanHangView(self.main_frame)
 
     def switch_account(self):
         # Đóng cửa sổ hiện tại
@@ -198,6 +241,10 @@ class MainWindow:
                 self.label_change.config(text=f'Tiền thừa: {change:,.0f} VND', foreground='blue')
         except Exception:
             self.label_change.config(text='Nhập số hợp lệ!', foreground='red')
+
+    def clear_main_frame(self):
+        for widget in self.main_frame.winfo_children():
+            widget.destroy()
 
 if __name__ == "__main__":
     root = tk.Tk()
