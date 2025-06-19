@@ -29,6 +29,17 @@ class ProductVariant:
             return ProductVariant(id=row[0], sanpham_id=row[1], ten_bienthe=row[2], gia=row[3], barcode=row[4])
         return None
 
+    @staticmethod
+    def get_by_barcode(barcode):
+        conn = sqlite3.connect('Database/ministore_db.sqlite')
+        cursor = conn.cursor()
+        cursor.execute('SELECT id, sanpham_id, ten_bienthe, gia, barcode FROM sanpham_bienthe WHERE barcode = ?', (barcode,))
+        row = cursor.fetchone()
+        conn.close()
+        if row:
+            return ProductVariant(id=row[0], sanpham_id=row[1], ten_bienthe=row[2], gia=row[3], barcode=row[4])
+        return None
+
     def save(self):
         conn = sqlite3.connect('Database/ministore_db.sqlite')
         cursor = conn.cursor()
