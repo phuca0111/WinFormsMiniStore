@@ -561,6 +561,14 @@ class MainWindow(tk.Frame):
     def open_supplier_product(self):
         from src.views.supplier_product_view import SupplierProductView
         self.open_tab("Nhập hàng", SupplierProductView)
+        # Sau khi mở tab, gọi load_variants nếu có
+        tab = self.tabs.get("Nhập hàng")
+        if tab:
+            frame = tab["frame"]
+            for child in frame.winfo_children():
+                if isinstance(child, SupplierProductView):
+                    child.load_variants()
+                    break
 
     def open_payment(self):
         from src.views.payment_view import PaymentView

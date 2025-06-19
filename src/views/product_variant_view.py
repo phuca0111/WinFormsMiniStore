@@ -119,12 +119,12 @@ class ProductVariantView(tk.Frame):
             messagebox.showwarning('Cảnh báo', 'Giá phải là số!')
             return
         sanpham_id = int(prod_str.split(' - ')[0])
-        add_product_variant(sanpham_id, ten_bienthe, gia, barcode)
-        self.entry_variant.delete(0, tk.END)
-        self.entry_price.delete(0, tk.END)
-        self.entry_barcode.delete(0, tk.END)
-        self.combo_product.set('')
-        self.load_variants()
+        if add_product_variant(sanpham_id, ten_bienthe, gia, barcode):
+            self.entry_variant.delete(0, tk.END)
+            self.entry_price.delete(0, tk.END)
+            self.entry_barcode.delete(0, tk.END)
+            self.combo_product.set('')
+            self.load_variants()
 
     def on_delete(self):
         selected = self.tree.selection()
@@ -160,12 +160,12 @@ class ProductVariantView(tk.Frame):
         item = self.tree.item(selected[0])
         id = item['values'][0]
         sanpham_id = int(prod_str.split(' - ')[0])
-        update_product_variant(id, sanpham_id, ten_bienthe, gia, barcode)
-        self.entry_variant.delete(0, tk.END)
-        self.entry_price.delete(0, tk.END)
-        self.entry_barcode.delete(0, tk.END)
-        self.combo_product.set('')
-        self.load_variants()
+        if update_product_variant(id, sanpham_id, ten_bienthe, gia, barcode):
+            self.entry_variant.delete(0, tk.END)
+            self.entry_price.delete(0, tk.END)
+            self.entry_barcode.delete(0, tk.END)
+            self.combo_product.set('')
+            self.load_variants()
 
     def on_select(self, event):
         selected = self.tree.selection()
