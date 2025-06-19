@@ -151,8 +151,13 @@ class ThongKeLoiLoModel:
             thoigian, doanh_thu, chi_phi_nhap = row
             chi_phi_tieu_huy = phieu_data.get(thoigian, 0)
             chi_phi_nhap_tong = chi_phi_nhap + chi_phi_tieu_huy
-            loi = max(doanh_thu - chi_phi_nhap_tong, 0)
-            lo = min(doanh_thu - chi_phi_nhap_tong, 0)
+            # Sửa: Nếu không có bán hàng, chỉ có tiêu hủy thì lãi/lỗ = 0
+            if doanh_thu == 0 and chi_phi_nhap == 0 and chi_phi_tieu_huy > 0:
+                loi = 0
+                lo = 0
+            else:
+                loi = max(doanh_thu - chi_phi_nhap_tong, 0)
+                lo = min(doanh_thu - chi_phi_nhap_tong, 0)
             result.append((thoigian, doanh_thu, chi_phi_nhap_tong, loi, lo))
         # Thêm các mốc chỉ có tiêu hủy mà không có bán hàng
         for thoigian in phieu_data:
@@ -161,8 +166,9 @@ class ThongKeLoiLoModel:
                 chi_phi_nhap = 0
                 chi_phi_tieu_huy = phieu_data[thoigian]
                 chi_phi_nhap_tong = chi_phi_nhap + chi_phi_tieu_huy
-                loi = max(doanh_thu - chi_phi_nhap_tong, 0)
-                lo = min(doanh_thu - chi_phi_nhap_tong, 0)
+                # Sửa: Nếu chỉ có tiêu hủy thì lãi/lỗ = 0
+                loi = 0
+                lo = 0
                 result.append((thoigian, doanh_thu, chi_phi_nhap_tong, loi, lo))
         conn.close()
         return result

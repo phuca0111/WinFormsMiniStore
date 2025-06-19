@@ -6,89 +6,97 @@ import sys
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../')))
 from Core.customer import CustomerCore
 
-class CustomerView:
+class CustomerView(tk.Frame):
     def __init__(self, parent, db_path):
-        self.parent = parent
+        super().__init__(parent)
+        self.db_path = db_path
         self.core = CustomerCore(db_path)
+        self.configure(bg="#EEF2F6")
+        self.pack(fill=tk.BOTH, expand=True)
         self.setup_ui()
 
     def setup_ui(self):
-        # Main frame
-        self.main_frame = ttk.Frame(self.parent)
-        self.main_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+        style = ttk.Style()
+        style.theme_use('clam')
+        style.configure("Customer.Treeview.Heading", font=("Segoe UI", 12, "bold"), foreground="#222", background="#EEF2F6", relief="flat")
+        style.configure("Customer.Treeview", font=("Segoe UI", 11), rowheight=32, background="#fff", fieldbackground="#fff", borderwidth=0)
+        style.configure("TButton", font=("Segoe UI", 12), padding=10, borderwidth=0, relief="flat", background="#eafaf1")
+        style.configure("TEntry", font=("Segoe UI", 12), padding=8, borderwidth=1, relief="groove", background="#fff")
+        style.configure("TCombobox", font=("Segoe UI", 12), padding=8, borderwidth=1, relief="groove", background="#fff", fieldbackground="#fff")
 
         # Search frame
-        search_frame = ttk.LabelFrame(self.main_frame, text="Search")
-        search_frame.pack(fill=tk.X, pady=5)
-
+        search_frame = tk.Frame(self, bg="#EEF2F6")
+        search_frame.pack(fill=tk.X, pady=8, padx=32)
+        tk.Label(search_frame, text="Search", font=("Segoe UI", 12, "bold"), bg="#EEF2F6").pack(side=tk.LEFT, padx=(0, 12))
         self.search_var = tk.StringVar()
-        search_entry = ttk.Entry(search_frame, textvariable=self.search_var)
-        search_entry.pack(side=tk.LEFT, padx=5, pady=5)
+        search_entry = ttk.Entry(search_frame, textvariable=self.search_var, font=("Segoe UI", 12))
+        search_entry.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=5, pady=5)
         search_entry.bind('<Return>', lambda e: self.search())
-
-        search_btn = ttk.Button(search_frame, text="Search", command=self.search)
+        search_btn = tk.Button(search_frame, text="Search", font=("Segoe UI", 12, "bold"), bg="#eafaf1", fg="#222", activebackground="#d1f2eb", relief="flat", bd=0, padx=18, pady=6, cursor="hand2", highlightthickness=0, command=self.search)
         search_btn.pack(side=tk.LEFT, padx=5)
 
         # Customer information frame
-        info_frame = ttk.LabelFrame(self.main_frame, text="Customer Information")
-        info_frame.pack(fill=tk.X, pady=5)
-
-        # Grid layout for information fields
-        ttk.Label(info_frame, text="Name:").grid(row=0, column=0, padx=5, pady=5)
+        info_frame = tk.LabelFrame(self, text="Customer Information", font=("Segoe UI", 12, "bold"), bg="#EEF2F6", fg="#222", bd=0)
+        info_frame.pack(fill=tk.X, pady=8, padx=32)
+        tk.Label(info_frame, text="Name:", font=("Segoe UI", 12), bg="#EEF2F6").grid(row=0, column=0, padx=8, pady=8, sticky="e")
         self.name_var = tk.StringVar()
-        ttk.Entry(info_frame, textvariable=self.name_var).grid(row=0, column=1, padx=5, pady=5)
-
-        ttk.Label(info_frame, text="Phone:").grid(row=0, column=2, padx=5, pady=5)
+        ttk.Entry(info_frame, textvariable=self.name_var, font=("Segoe UI", 12)).grid(row=0, column=1, padx=8, pady=8, sticky="ew")
+        tk.Label(info_frame, text="Phone:", font=("Segoe UI", 12), bg="#EEF2F6").grid(row=0, column=2, padx=8, pady=8, sticky="e")
         self.phone_var = tk.StringVar()
-        ttk.Entry(info_frame, textvariable=self.phone_var).grid(row=0, column=3, padx=5, pady=5)
-
-        ttk.Label(info_frame, text="Email:").grid(row=1, column=0, padx=5, pady=5)
+        ttk.Entry(info_frame, textvariable=self.phone_var, font=("Segoe UI", 12)).grid(row=0, column=3, padx=8, pady=8, sticky="ew")
+        tk.Label(info_frame, text="Email:", font=("Segoe UI", 12), bg="#EEF2F6").grid(row=1, column=0, padx=8, pady=8, sticky="e")
         self.email_var = tk.StringVar()
-        ttk.Entry(info_frame, textvariable=self.email_var).grid(row=1, column=1, padx=5, pady=5)
-
-        ttk.Label(info_frame, text="Address:").grid(row=1, column=2, padx=5, pady=5)
+        ttk.Entry(info_frame, textvariable=self.email_var, font=("Segoe UI", 12)).grid(row=1, column=1, padx=8, pady=8, sticky="ew")
+        tk.Label(info_frame, text="Address:", font=("Segoe UI", 12), bg="#EEF2F6").grid(row=1, column=2, padx=8, pady=8, sticky="e")
         self.address_var = tk.StringVar()
-        ttk.Entry(info_frame, textvariable=self.address_var).grid(row=1, column=3, padx=5, pady=5)
-
-        ttk.Label(info_frame, text="Birth Date:").grid(row=2, column=0, padx=5, pady=5)
+        ttk.Entry(info_frame, textvariable=self.address_var, font=("Segoe UI", 12)).grid(row=1, column=3, padx=8, pady=8, sticky="ew")
+        tk.Label(info_frame, text="Birth Date:", font=("Segoe UI", 12), bg="#EEF2F6").grid(row=2, column=0, padx=8, pady=8, sticky="e")
         self.birthdate_var = tk.StringVar()
-        ttk.Entry(info_frame, textvariable=self.birthdate_var).grid(row=2, column=1, padx=5, pady=5)
-
-        ttk.Label(info_frame, text="Gender:").grid(row=2, column=2, padx=5, pady=5)
+        ttk.Entry(info_frame, textvariable=self.birthdate_var, font=("Segoe UI", 12)).grid(row=2, column=1, padx=8, pady=8, sticky="ew")
+        tk.Label(info_frame, text="Gender:", font=("Segoe UI", 12), bg="#EEF2F6").grid(row=2, column=2, padx=8, pady=8, sticky="e")
         self.gender_var = tk.StringVar()
-        ttk.Combobox(info_frame, textvariable=self.gender_var, values=["Male", "Female"]).grid(row=2, column=3, padx=5, pady=5)
+        ttk.Combobox(info_frame, textvariable=self.gender_var, values=["Male", "Female"], font=("Segoe UI", 12), state='readonly', style="TCombobox").grid(row=2, column=3, padx=8, pady=8, sticky="ew")
+        info_frame.grid_columnconfigure(1, weight=1)
+        info_frame.grid_columnconfigure(3, weight=1)
 
         # Button frame
-        btn_frame = ttk.Frame(self.main_frame)
-        btn_frame.pack(fill=tk.X, pady=5)
+        btn_frame = tk.Frame(self, bg="#EEF2F6")
+        btn_frame.pack(fill=tk.X, pady=8, padx=32)
+        def style_btn(btn, color, hover):
+            btn.configure(bg=color, fg="#222", activebackground=hover, activeforeground="#222", relief="flat", bd=0, font=("Segoe UI", 12, "bold"), cursor="hand2", padx=18, pady=10, highlightthickness=0, borderwidth=0)
+            btn.bind("<Enter>", lambda e: btn.configure(bg=hover))
+            btn.bind("<Leave>", lambda e: btn.configure(bg=color))
+        btn_new = tk.Button(btn_frame, text="New", command=self.new)
+        style_btn(btn_new, "#eafaf1", "#b6f5c1")
+        btn_new.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=8)
+        btn_save = tk.Button(btn_frame, text="Save", command=self.save)
+        style_btn(btn_save, "#f9e7cf", "#f6cba3")
+        btn_save.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=8)
+        btn_delete = tk.Button(btn_frame, text="Delete", command=self.delete)
+        style_btn(btn_delete, "#fdeaea", "#f6bebe")
+        btn_delete.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=8)
+        btn_refresh = tk.Button(btn_frame, text="Refresh", command=self.refresh)
+        style_btn(btn_refresh, "#e8eaf6", "#c5cae9")
+        btn_refresh.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=8)
 
-        ttk.Button(btn_frame, text="New", command=self.new).pack(side=tk.LEFT, padx=5)
-        ttk.Button(btn_frame, text="Save", command=self.save).pack(side=tk.LEFT, padx=5)
-        ttk.Button(btn_frame, text="Delete", command=self.delete).pack(side=tk.LEFT, padx=5)
-        ttk.Button(btn_frame, text="Refresh", command=self.refresh).pack(side=tk.LEFT, padx=5)
-
-        # Treeview for customer list
-        self.tree = ttk.Treeview(self.main_frame, columns=("ID", "Name", "Phone", "Email", "Address", "Birth Date", "Gender"))
-        self.tree.heading("ID", text="ID")
-        self.tree.heading("Name", text="Name")
-        self.tree.heading("Phone", text="Phone")
-        self.tree.heading("Email", text="Email")
-        self.tree.heading("Address", text="Address")
-        self.tree.heading("Birth Date", text="Birth Date")
-        self.tree.heading("Gender", text="Gender")
-
-        self.tree.column("#0", width=0, stretch=tk.NO)
-        self.tree.column("ID", width=50)
-        self.tree.column("Name", width=150)
-        self.tree.column("Phone", width=100)
-        self.tree.column("Email", width=150)
-        self.tree.column("Address", width=200)
-        self.tree.column("Birth Date", width=100)
-        self.tree.column("Gender", width=100)
-
-        self.tree.pack(fill=tk.BOTH, expand=True, pady=5)
+        # Border bo tròn giả lập cho bảng
+        table_frame = tk.Frame(self, bg="#EEF2F6")
+        table_frame.pack(fill=tk.BOTH, expand=True, padx=32, pady=(0, 32))
+        table_border = tk.Frame(table_frame, bg="#EEF2F6", bd=0)
+        table_border.pack(fill=tk.BOTH, expand=True, padx=2, pady=2)
+        table_inner = tk.Frame(table_border, bg="#fff")
+        table_inner.pack(fill=tk.BOTH, expand=True, padx=2, pady=2)
+        columns = ("ID", "Name", "Phone", "Email", "Address", "Birth Date", "Gender")
+        self.tree = ttk.Treeview(table_inner, columns=columns, show="headings", style="Customer.Treeview")
+        for col in columns:
+            self.tree.heading(col, text=col, anchor="center")
+            self.tree.column(col, anchor="center", width=120)
+        self.tree.pack(fill=tk.BOTH, expand=True, pady=5, padx=8)
         self.tree.bind('<<TreeviewSelect>>', self.on_select)
-
+        # Thanh cuộn dọc
+        scrollbar = tk.Scrollbar(table_inner, orient=tk.VERTICAL, command=self.tree.yview)
+        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+        self.tree.configure(yscrollcommand=scrollbar.set)
         # Load initial data
         self.load_data()
 
@@ -179,22 +187,3 @@ class CustomerView:
         results = self.core.search_customers(keyword)
         for customer in results:
             self.tree.insert("", tk.END, values=customer)
-
-def main():
-    # Create main window
-    root = tk.Tk()
-    root.title("Customer Management")
-    root.geometry("1000x600")
-
-    # Get database path
-    current_dir = os.path.dirname(os.path.abspath(__file__))
-    db_path = os.path.join(os.path.dirname(os.path.dirname(current_dir)), "Database", "ministore_db.sqlite")
-
-    # Initialize customer interface
-    app = CustomerView(root, db_path)
-
-    # Run application
-    root.mainloop()
-
-if __name__ == "__main__":
-    main()

@@ -8,13 +8,28 @@ def start_app(user_info):
     print("DEBUG: Đã vào start_app", user_info)
     nhanvien_id = user_info[3]
     ten_nhanvien = user_info[1]
-    root = tk.Tk()
+    root = tk._default_root  # Lấy root đã tạo từ trước
+    root.deiconify()  # Hiện lại cửa sổ chính
+    root.title("Quản lý MiniStore")
+    root.geometry("1400x750")
+    # Căn giữa cửa sổ
+    root.update_idletasks()
+    w = root.winfo_width()
+    h = root.winfo_height()
+    ws = root.winfo_screenwidth()
+    hs = root.winfo_screenheight()
+    x = (ws // 2) - (w // 2)
+    y = (hs // 2) - (h // 2)
+    root.geometry(f'{w}x{h}+{x}+{y}')
     app = MainWindow(root, nhanvien_id, ten_nhanvien)
-    root.mainloop()
+    app.pack(fill=tk.BOTH, expand=True)  # Đảm bảo không có padding, sát titlebar
 
 def main():
     print("DEBUG: Đã vào main()")
-    show_login(start_app)
+    root = tk.Tk()
+    root.withdraw()  # Ẩn cửa sổ chính khi login
+    show_login(root, start_app)
+    root.mainloop()
 
 def scan_barcode():
     cap = cv2.VideoCapture(0)

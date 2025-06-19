@@ -4,34 +4,87 @@ import sqlite3
 import pandas as pd
 from datetime import datetime
 
-class PhieuTieuHuyReportView(ttk.Frame):
+class PhieuTieuHuyReportView(tk.Frame):
     def __init__(self, parent, db_path='Database/ministore_db.sqlite'):
         super().__init__(parent)
         self.db_path = db_path
+        self.configure(bg="#EEF2F6")
         self.pack(fill=tk.BOTH, expand=True)
         self.create_widgets()
         self.load_data()
 
     def create_widgets(self):
-        frame_top = ttk.Frame(self)
-        frame_top.pack(fill=tk.X, pady=5)
-        ttk.Label(frame_top, text="Từ ngày:").pack(side=tk.LEFT, padx=5)
-        self.entry_from = ttk.Entry(frame_top, width=12)
-        self.entry_from.pack(side=tk.LEFT)
-        ttk.Label(frame_top, text="Đến ngày:").pack(side=tk.LEFT, padx=5)
-        self.entry_to = ttk.Entry(frame_top, width=12)
-        self.entry_to.pack(side=tk.LEFT)
-        btn_filter = ttk.Button(frame_top, text="Lọc", command=self.on_filter)
-        btn_filter.pack(side=tk.LEFT, padx=5)
-        btn_excel = ttk.Button(frame_top, text="Xuất Excel", command=self.export_excel)
-        btn_excel.pack(side=tk.LEFT, padx=5)
+        # Top filter đẹp
+        frame_top = tk.Frame(self, bg="#EEF2F6")
+        frame_top.pack(fill=tk.X, pady=16, padx=32)
+        tk.Label(frame_top, text="Từ ngày:", font=("Segoe UI", 12), bg="#EEF2F6").pack(side=tk.LEFT, padx=(0, 4))
+        self.entry_from = ttk.Entry(frame_top, width=12, font=("Segoe UI", 12))
+        self.entry_from.pack(side=tk.LEFT, padx=(0, 16))
+        tk.Label(frame_top, text="Đến ngày:", font=("Segoe UI", 12), bg="#EEF2F6").pack(side=tk.LEFT, padx=(0, 4))
+        self.entry_to = ttk.Entry(frame_top, width=12, font=("Segoe UI", 12))
+        self.entry_to.pack(side=tk.LEFT, padx=(0, 16))
+        btn_filter = tk.Button(frame_top, text="Lọc", font=("Segoe UI", 12, "bold"), bg="#eafaf1", fg="#222", activebackground="#d1f2eb", relief="flat", bd=0, padx=18, pady=6, cursor="hand2", highlightthickness=0)
+        btn_filter.pack(side=tk.LEFT, padx=(0, 16))
+        btn_filter.configure(command=self.on_filter)
+        btn_excel = tk.Button(frame_top, text="Xuất Excel", font=("Segoe UI", 12, "bold"), bg="#eafaf1", fg="#1ca97a", activebackground="#b6f5c1", relief="flat", bd=0, padx=18, pady=6, cursor="hand2", highlightthickness=0)
+        btn_excel.pack(side=tk.LEFT)
+        btn_excel.configure(command=self.export_excel)
+        btn_excel.bind("<Enter>", lambda e: btn_excel.configure(bg="#b6f5c1"))
+        btn_excel.bind("<Leave>", lambda e: btn_excel.configure(bg="#eafaf1"))
 
+        # Style bảng
+        style = ttk.Style()
+        style.theme_use('clam')
+        style.configure("TieuHuy.Treeview.Heading", font=("Segoe UI", 12, "bold"), foreground="#222", background="#EEF2F6", relief="flat")
+        style.configure("TieuHuy.Treeview", font=("Segoe UI", 11), rowheight=32, background="#fff", fieldbackground="#fff", borderwidth=0)
+        style.map("TieuHuy.Treeview", background=[("selected", "#e3e8ee")], foreground=[("selected", "#232a36")])
+
+        # Border bo tròn giả lập
+        table_frame = tk.Frame(self, bg="#EEF2F6")
+        table_frame.pack(fill=tk.BOTH, expand=True, padx=32, pady=(0, 32))
+        table_border = tk.Frame(table_frame, bg="#EEF2F6", bd=0)
+        table_border.pack(fill=tk.BOTH, expand=True, padx=2, pady=2)
+        table_inner = tk.Frame(table_border, bg="#fff")
+        table_inner.pack(fill=tk.BOTH, expand=True, padx=2, pady=2)
         columns = ("Sản phẩm", "Biến thể", "Mã lô", "Số lượng tiêu hủy", "Giá nhập", "Tổng giá trị", "Ngày tiêu hủy", "Nhân viên", "Ghi chú")
-        self.tree = ttk.Treeview(self, columns=columns, show="headings")
+        self.tree = ttk.Treeview(table_inner, columns=columns, show="headings", style="TieuHuy.Treeview")
         for col in columns:
-            self.tree.heading(col, text=col)
-            self.tree.column(col, anchor=tk.CENTER, width=120)
-        self.tree.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+            if col == "Sản phẩm":
+                self.tree.heading(col, text=col, anchor=tk.W)
+                self.tree.column(col, anchor=tk.W, width=180, stretch=True)
+            elif col == "Biến thể":
+                self.tree.heading(col, text=col, anchor=tk.W)
+                self.tree.column(col, anchor=tk.W, width=180, stretch=True)
+            elif col == "Ghi chú":
+                self.tree.heading(col, text=col, anchor=tk.W)
+                self.tree.column(col, anchor=tk.W, width=220, stretch=True)
+            elif col == "Mã lô":
+                self.tree.heading(col, text=col, anchor=tk.CENTER)
+                self.tree.column(col, anchor=tk.CENTER, width=140)
+            elif col in ("Số lượng tiêu hủy", "Giá nhập", "Tổng giá trị"):
+                self.tree.heading(col, text=col, anchor=tk.CENTER)
+                self.tree.column(col, anchor=tk.CENTER, width=120)
+            elif col == "Ngày tiêu hủy":
+                self.tree.heading(col, text=col, anchor=tk.CENTER)
+                self.tree.column(col, anchor=tk.CENTER, width=150)
+            elif col == "Nhân viên":
+                self.tree.heading(col, text=col, anchor=tk.CENTER)
+                self.tree.column(col, anchor=tk.CENTER, width=110)
+            else:
+                self.tree.heading(col, text=col, anchor=tk.CENTER)
+                self.tree.column(col, anchor=tk.CENTER, width=120)
+        self.tree.pack(fill=tk.BOTH, expand=True, padx=8, pady=8)
+        # Zebra striping
+        self.tree.tag_configure('oddrow', background='#fff')
+        self.tree.tag_configure('evenrow', background='#f7f9fa')
+        # Thanh cuộn dọc
+        scrollbar = tk.Scrollbar(table_inner, orient=tk.VERTICAL, command=self.tree.yview)
+        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+        self.tree.configure(yscrollcommand=scrollbar.set)
+        # Thêm thanh cuộn ngang nếu bảng bị tràn
+        xscroll = tk.Scrollbar(table_inner, orient=tk.HORIZONTAL, command=self.tree.xview)
+        xscroll.pack(side=tk.BOTTOM, fill=tk.X)
+        self.tree.configure(xscrollcommand=xscroll.set)
 
     def load_data(self, from_date=None, to_date=None):
         self.tree.delete(*self.tree.get_children())

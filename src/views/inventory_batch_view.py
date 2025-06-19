@@ -13,15 +13,51 @@ class InventoryBatchView(ttk.Frame):
         self.load_data()
 
     def create_widgets(self):
+        # Style đẹp cho bảng
+        style = ttk.Style()
+        style.theme_use('clam')
+        style.configure("Custom.Treeview.Heading",
+            background="#fff", foreground="#232a36", font=("Segoe UI", 13, "bold"),
+            borderwidth=0, relief="flat"
+        )
+        style.configure("Custom.Treeview",
+            font=("Segoe UI", 12),
+            rowheight=36,
+            background="#fff",
+            fieldbackground="#fff",
+            borderwidth=0,
+            relief="flat"
+        )
+        style.map("Custom.Treeview",
+            background=[("selected", "#e3e8ee")],
+            foreground=[("selected", "#232a36")]
+        )
+        # Zebra striping
+        # Border bo tròn giả lập
+        table_frame = tk.Frame(self, bg="#F5F7FA")
+        table_frame.pack(fill=tk.BOTH, expand=True, padx=32, pady=(32, 32))
+        table_border = tk.Frame(table_frame, bg="#EEF2F6", bd=0)
+        table_border.pack(fill=tk.BOTH, expand=True, padx=2, pady=2)
+        table_inner = tk.Frame(table_border, bg="#fff")
+        table_inner.pack(fill=tk.BOTH, expand=True, padx=2, pady=2)
         columns = ("Sản phẩm", "Biến thể", "Mã lô", "Ngày nhập", "Hạn sử dụng", "Số lượng còn lại", "Tiêu hủy")
-        self.tree = ttk.Treeview(self, columns=columns, show="headings")
-        for col in columns[:-1]:
-            self.tree.heading(col, text=col)
-            self.tree.column(col, anchor=tk.CENTER, width=140)
-        self.tree.heading("Tiêu hủy", text="Tiêu hủy")
-        self.tree.column("Tiêu hủy", anchor=tk.CENTER, width=80)
-        self.tree.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+        self.tree = ttk.Treeview(table_inner, columns=columns, show="headings", style="Custom.Treeview")
+        for col in columns:
+            anchor = tk.W if col in ("Sản phẩm", "Biến thể", "Mã lô") else tk.CENTER
+            self.tree.heading(col, text=col, anchor=anchor)
+            self.tree.column(col, anchor=anchor, width=180 if col in ("Sản phẩm", "Biến thể", "Mã lô") else 140, stretch=True)
+        self.tree.pack(fill=tk.BOTH, expand=True, padx=8, pady=8, side=tk.LEFT)
+        self.tree.tag_configure('oddrow', background='#fff')
+        self.tree.tag_configure('evenrow', background='#f7f9fa')
         self.tree.bind('<ButtonRelease-1>', self.on_tree_click)
+        # Thêm thanh cuộn ngang
+        xscroll = tk.Scrollbar(table_inner, orient=tk.HORIZONTAL, command=self.tree.xview)
+        xscroll.pack(side=tk.BOTTOM, fill=tk.X)
+        self.tree.configure(xscrollcommand=xscroll.set)
+        # Thêm thanh cuộn dọc (nếu muốn)
+        yscroll = tk.Scrollbar(table_inner, orient=tk.VERTICAL, command=self.tree.yview)
+        yscroll.pack(side=tk.RIGHT, fill=tk.Y)
+        self.tree.configure(yscrollcommand=yscroll.set)
 
     def load_data(self):
         self.tree.delete(*self.tree.get_children())

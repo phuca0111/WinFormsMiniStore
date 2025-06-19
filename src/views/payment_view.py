@@ -6,8 +6,11 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../'
 import tkinter as tk
 from tkinter import ttk, messagebox
 from Core.barcode_scanner import scan_barcode
-from Core import cart, payment
+from Core import payment
 from Core.setting import SettingCore
+from models.product_variant_model import ProductVariant
+from PIL import Image, ImageTk
+from Core.payment import CartManager
 
 class CashPopup:
     def __init__(self, parent, total):
@@ -19,9 +22,9 @@ class CashPopup:
         self.popup.title('Tiền khách đưa')
         self.popup.geometry('300x150')
         ttk.Label(self.popup, text=f'Tổng tiền: {self.total:,.0f} VND').pack(pady=5)
-        self.entry_cash = tk.Entry(self.popup, font=('Arial', 12))
+        self.entry_cash = tk.Entry(self.popup, font=("Arial", 12))
         self.entry_cash.pack(pady=5)
-        self.label_change = ttk.Label(self.popup, text='', font=('Arial', 11, 'bold'), foreground='blue')
+        self.label_change = ttk.Label(self.popup, text='', font=("Arial", 11, "bold"), foreground='blue')
         self.label_change.pack(pady=5)
         self.entry_cash.focus_set()
         self.entry_cash.bind('<KeyRelease>', lambda e: self.calc_change())
@@ -65,209 +68,304 @@ class CashPopup:
             self.label_change.config(text='Nhập số hợp lệ!', foreground='red')
             messagebox.showerror('Lỗi', 'Nhập số hợp lệ!')
 
-def main(nhanvien_id):
-    root = tk.Tk()
-    root.title('Thanh toán hóa đơn')
-    root.geometry('900x600')
+class PaymentView(tk.Frame):
+    def __init__(self, parent, nhanvien_id, main_window=None, cart_manager=None):
+        super().__init__(parent)
+        self.nhanvien_id = nhanvien_id
+        self.main_window = main_window
+        self.cart_manager = cart_manager if cart_manager else CartManager()
+        self.pack(fill=tk.BOTH, expand=True)
+        self.configure(bg="#f5f7fa")
+        self.create_layout()
+        self.load_products()
+        self.reload_cart()
+        self.set_status("")
+        self.hold_cart_count = 0
+        self.hold_carts = []
 
-    # Khai báo biến ở scope cao nhất.
-    tien_khach_dua = None
-    tien_thoi_lai = None
+    def create_layout(self):
+        # Đặt font mặc định cho toàn bộ giao diện
+        self.option_add("*Font", "Arial 12")
+        self.option_add("*Foreground", "#222")
+        bg_color = "#f5f7fa"
+        border_color = "#DADADA"
+        style = ttk.Style()
+        style.theme_use('clam')
+        style.configure("Custom.Treeview.Heading",
+            background="#EEF2F6",  # Màu header mới
+            foreground="#232a36",
+            font=("Segoe UI", 13, "bold"),
+            borderwidth=0,
+            relief="flat"
+        )
+        style.configure("Custom.Treeview",
+            font=("Arial", 12),
+            rowheight=32,
+            background="#fff",
+            fieldbackground="#fff",
+            borderwidth=0
+        )
+        style.configure("Custom.TLabelframe", background="#FFFFFF", bordercolor=border_color, borderwidth=0, relief="flat")
+        style.configure("Custom.TLabelframe.Label", background="#FFFFFF", foreground="#333", font=("Arial", 11, "bold"))
+        style.configure("Custom.TFrame", background=bg_color)
+        style.configure("TLabel", foreground="#222")
+        style.configure("TEntry", foreground="#222")
 
-    # Frame nhập barcode và hiển thị barcode
-    frame_barcode = ttk.Frame(root)
-    frame_barcode.pack(fill=tk.X, padx=10, pady=5)
+        # Chia 2 cột
+        left = ttk.Frame(self, style="Custom.TFrame")
+        left.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=10, pady=10)
+        right = ttk.Frame(self, style="Custom.TFrame")
+        right.pack(side=tk.RIGHT, fill=tk.BOTH, expand=True, padx=10, pady=10)
 
-    ttk.Label(frame_barcode, text='Barcode:').grid(row=0, column=0, padx=5, pady=5)
-    entry_barcode = ttk.Entry(frame_barcode, font=('Arial', 12))
-    entry_barcode.grid(row=0, column=1, padx=5, pady=5)
+        # --- LEFT: Barcode + Sản phẩm ---
+        barcode_frame = tk.Frame(left, bg="#FFFFFF")
+        barcode_frame.pack(fill=tk.X, pady=5)
+        barcode_title = tk.Label(barcode_frame, text="Quét mã vạch / Tìm kiếm", font=("Arial", 11, "bold"), fg="#333", bg="#FFFFFF", anchor="w")
+        barcode_title.pack(fill=tk.X, padx=2, pady=(0, 6))
+        entry_barcode = tk.Entry(barcode_frame, font=("Arial", 18), fg="#222", bg="#FFFFFF")
+        entry_barcode.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=5)
+        self.entry_barcode = entry_barcode
+        btn_scan = tk.Button(barcode_frame, text="Quét mã", width=10, font=("Arial", 13), command=self.on_scan, fg="#222", bg="#f8f8f8", bd=1, relief="solid")
+        btn_scan.pack(side=tk.LEFT, padx=5)
 
-    label_barcode = ttk.Label(frame_barcode, text='', font=('Arial', 12), foreground='blue')
-    label_barcode.grid(row=0, column=2, padx=5, pady=5)
+        # Danh sách sản phẩm
+        product_frame = tk.Frame(left, bg="#FFFFFF")
+        product_frame.pack(fill=tk.BOTH, expand=True, pady=5)
+        product_title = tk.Label(product_frame, text="Danh sách sản phẩm", font=("Arial", 11, "bold"), fg="#333", bg="#FFFFFF", anchor="w")
+        product_title.pack(fill=tk.X, padx=2, pady=(0, 6))
+        self.tree_products = ttk.Treeview(product_frame, columns=("Tên", "Giá"), show="headings", height=12, style="Custom.Treeview")
+        self.tree_products.heading("Tên", text="Tên sản phẩm")
+        self.tree_products.heading("Giá", text="Giá bán")
+        self.tree_products.column("Tên", width=200)
+        self.tree_products.column("Giá", width=100, anchor="e")
+        self.tree_products.pack(fill=tk.BOTH, expand=True)
+        # Thêm sự kiện double click để thêm sản phẩm vào giỏ hàng
+        self.tree_products.bind('<Double-1>', self.on_product_double_click)
 
-    # Treeview giỏ hàng
-    frame_cart = ttk.LabelFrame(root, text='Danh sách sản phẩm trong giỏ hàng', padding=10)
-    frame_cart.pack(fill=tk.BOTH, padx=10, pady=10, expand=True)
-    columns = ('STT', 'Tên sản phẩm', 'Tên biến thể', 'Số lượng', 'Đơn giá', 'Thành tiền', 'Barcode')
-    tree_cart = ttk.Treeview(frame_cart, columns=columns, show='headings', height=10)
-    for col in columns:
-        tree_cart.heading(col, text=col)
-        tree_cart.column(col, anchor='center')
-    tree_cart.pack(fill=tk.BOTH, expand=True)
+        # --- RIGHT: Giỏ hàng + Thanh toán ---
+        cart_frame = tk.Frame(right, bg="#FFFFFF")
+        cart_frame.pack(fill=tk.BOTH, expand=True, pady=5)
+        cart_title = tk.Label(cart_frame, text="Giỏ hàng", font=("Arial", 11, "bold"), fg="#333", bg="#FFFFFF", anchor="w")
+        cart_title.pack(fill=tk.X, padx=2, pady=(0, 6))
+        self.tree_cart = ttk.Treeview(cart_frame, columns=("STT", "Tên SP", "Biến thể", "SL", "Đơn giá", "Thành tiền"), show="headings", height=8, style="Custom.Treeview")
+        for col in ("STT", "Tên SP", "Biến thể", "SL", "Đơn giá", "Thành tiền"):
+            self.tree_cart.heading(col, text=col)
+        self.tree_cart.column("STT", width=50, anchor="center")
+        self.tree_cart.column("Tên SP", width=180)
+        self.tree_cart.column("Biến thể", width=120)
+        self.tree_cart.column("SL", width=60, anchor="center")
+        self.tree_cart.column("Đơn giá", width=90, anchor="e")
+        self.tree_cart.column("Thành tiền", width=110, anchor="e")
+        self.tree_cart.pack(fill=tk.BOTH, expand=True)
+        # Label mờ khi giỏ hàng trống
+        self.empty_cart_label = tk.Label(cart_frame, text="Chưa có sản phẩm trong giỏ hàng", font=("Arial", 13, "italic"), fg="#888", bg="#FFFFFF")
+        self.empty_cart_label.place(relx=0.5, rely=0.5, anchor="center")
+        self.empty_cart_label.lower(self.tree_cart)
+        # Tổng số mặt hàng
+        self.label_total_items = tk.Label(cart_frame, text="Tổng sản phẩm: 0", font=("Arial", 11, "italic"), fg="#555", bg="#FFFFFF", anchor="w")
+        self.label_total_items.pack(fill=tk.X, pady=(4, 0), padx=2, anchor="w")
 
-    label_hint = tk.Label(frame_cart, text="Mẹo: Nhấp đúp vào ô Số lượng để sửa nhanh số lượng sản phẩm. Nhập 0 để xóa sản phẩm.", 
-                          font=('Arial', 9), fg='gray')
-    label_hint.pack(anchor='w', padx=5, pady=(2, 0))
-    label_hint = tk.Label(frame_cart, text="Mẹo:khi không quét được mã vạch hãy nhập thủ công và ấn enter bạn nhé.", 
-                          font=('Arial', 9), fg='gray')
-    label_hint.pack(anchor='w', padx=5, pady=(2, 0))
-    label_hint = tk.Label(frame_cart, text="Mẹo:khi nhập số điện thoại sẽ hiển thị tên khách hàng.", 
-                          font=('Arial', 9), fg='gray')
-    label_hint.pack(anchor='w', padx=5, pady=(2, 0))
-    
-    def reload_cart():
-        cart_items, total = payment.reload_cart()
-        for item in tree_cart.get_children():
-            tree_cart.delete(item)
+        # Thông tin khách hàng
+        customer_frame = tk.Frame(right, bg="#FFFFFF")
+        customer_frame.pack(fill=tk.X, pady=5)
+        customer_title = tk.Label(customer_frame, text="Khách hàng", font=("Arial", 11, "bold"), fg="#333", bg="#FFFFFF", anchor="w")
+        customer_title.grid(row=0, column=0, columnspan=6, sticky="w", padx=2, pady=(0, 6))
+        tk.Label(customer_frame, text="Tên KH:", font=("Arial", 13), bg="#FFFFFF", fg="#222").grid(row=1, column=0, sticky="e")
+        self.entry_customer = tk.Entry(customer_frame, font=("Arial", 13), fg="#222", bg="#FFFFFF")
+        self.entry_customer.grid(row=1, column=1, padx=5, sticky="ew")
+        tk.Label(customer_frame, text="SĐT:", font=("Arial", 13), bg="#FFFFFF", fg="#222").grid(row=1, column=2, sticky="e")
+        self.entry_phone = tk.Entry(customer_frame, font=("Arial", 13), fg="#222", bg="#FFFFFF")
+        self.entry_phone.grid(row=1, column=3, padx=5, sticky="ew")
+        ttk.Separator(customer_frame, orient=tk.VERTICAL).grid(row=1, column=4, sticky="ns", padx=8)
+        btn_create_cus = tk.Button(customer_frame, text="Tạo mới KH", font=("Arial", 13, "bold"), command=self.on_create_customer,
+                                  bg="#3498DB", fg="white", activebackground="#217dbb", activeforeground="white", bd=0, relief="flat", cursor="hand2")
+        btn_create_cus.grid(row=1, column=5, padx=(10,0), sticky="ew", ipady=4, ipadx=4)
+        # Responsive: cho các cột entry, nút co giãn
+        customer_frame.grid_columnconfigure(1, weight=1)
+        customer_frame.grid_columnconfigure(3, weight=1)
+        customer_frame.grid_columnconfigure(5, weight=1)
+
+        # Tổng tiền & nút thanh toán
+        total_frame = ttk.Frame(right, style="Custom.TFrame")
+        total_frame.pack(fill=tk.X, pady=(10, 0))
+        tk.Label(total_frame, text="TỔNG TIỀN:", font=("Arial", 16, "bold"), bg=bg_color, fg="#222").pack(side=tk.LEFT)
+        self.label_total = tk.Label(total_frame, text="0", font=("Arial", 28, "bold"), fg="red", bg=bg_color)
+        self.label_total.pack(side=tk.LEFT, padx=10)
+        btn_pay = tk.Button(
+            right, text="XÁC NHẬN THANH TOÁN", bg="#f5f7fa", fg="#27AE60",
+            font=("Arial", 16, "bold"), width=24, height=2, relief="flat", bd=0,
+            command=self.on_pay, activebackground="#e0e0e0", activeforeground="#219150"
+        )
+        btn_pay.pack(pady=(0, 5), anchor="center")
+
+        # --- Hàng chờ ---
+        hold_frame = tk.Frame(right, bg="#f5f7fa")
+        hold_frame.pack(pady=2, fill=tk.X)
+        btn_hold = tk.Button(hold_frame, text="Đưa vào hàng chờ", font=("Arial", 12, "bold"), bg="#eafaf1", fg="#222", relief="flat", bd=0, padx=12, pady=8, command=self.hold_cart)
+        btn_hold.pack(side=tk.LEFT, padx=8, pady=4, fill=tk.X, expand=True)
+        btn_list_hold = tk.Button(hold_frame, text="Danh sách hàng chờ", font=("Arial", 12, "bold"), bg="#e8eaf6", fg="#222", relief="flat", bd=0, padx=12, pady=8, command=self.show_hold_carts)
+        btn_list_hold.pack(side=tk.LEFT, padx=8, pady=4, fill=tk.X, expand=True)
+
+        # Mẹo nhỏ
+        def show_tips():
+            tips_popup = tk.Toplevel(self)
+            tips_popup.title("Mẹo sử dụng POS")
+            tips_popup.geometry("400x260")
+            tips_popup.resizable(False, False)
+            tk.Label(tips_popup, text="MẸO SỬ DỤNG POS", font=("Arial", 14, "bold"), fg="#2980b9").pack(pady=(12, 8))
+            tips_text = (
+                "- Quét mã vạch hoặc tìm kiếm sản phẩm, nhấn Enter để thêm vào giỏ.\n"
+                "- Double click vào số lượng để sửa nhanh.\n"
+                "- Có thể tạo khách hàng mới nhanh ở khung bên phải.\n"
+                "- Sau khi thanh toán, hóa đơn sẽ tự động lưu file PDF.\n"
+            )
+            tk.Label(tips_popup, text=tips_text, font=("Arial", 12), justify="left", anchor="w").pack(padx=18, pady=4, fill="both", expand=True)
+            tk.Button(tips_popup, text="Đóng", font=("Arial", 11), command=tips_popup.destroy).pack(pady=10)
+        icon_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../Assets/icon/lightbulb.png'))
+        print("DEBUG icon_path:", icon_path)
+        try:
+            img = Image.open(icon_path)
+            img = img.resize((20, 20), Image.LANCZOS)
+            self.lightbulb_icon = ImageTk.PhotoImage(img)
+        except Exception as e:
+            print("Lỗi load icon:", e)
+            self.lightbulb_icon = None
+        btn_tip = tk.Button(right, text=" Mẹo", image=self.lightbulb_icon, compound="left", fg="#2980b9", bg=bg_color, font=("Arial", 11, "bold"), bd=0, cursor="hand2", command=show_tips)
+        btn_tip.pack(anchor="w", pady=2)
+        # Thêm dòng hướng dẫn nhỏ dưới nút Mẹo
+        lbl_tip_note = tk.Label(right, text="Nếu gặp khó khăn hãy ấn vào đây", font=("Arial", 10, "italic"), fg="#888", bg=bg_color, anchor="w")
+        lbl_tip_note.pack(anchor="w", padx=2, pady=(0, 8))
+
+        # Label trạng thái
+        self.status_label = tk.Label(self, text="", font=("Arial", 11, "italic"), fg="#2980b9", bg=bg_color)
+        self.status_label.pack(side=tk.BOTTOM, fill=tk.X, pady=2)
+
+        self.tree_cart.bind('<Key>', self.on_key_press)
+        self.tree_cart.bind('<Double-1>', self.on_double_click)
+        self.entry_barcode.bind('<Return>', self.on_barcode_enter)
+        self.entry_phone.bind('<FocusOut>', self.on_phone_focus_out)
+        self.entry_phone.bind('<Return>', lambda e: self.on_phone_focus_out())
+
+    def set_status(self, msg):
+        self.status_label.config(text=msg)
+
+    def load_products(self):
+        self.tree_products.delete(*self.tree_products.get_children())
+        products = ProductVariant.get_all()
+        for p in products:
+            self.tree_products.insert('', 'end', values=(p.ten_bienthe, p.gia))
+
+    def reload_cart(self):
+        cart_items = self.cart_manager.get_cart_items()
+        total = self.cart_manager.calculate_total()
+        self.tree_cart.delete(*self.tree_cart.get_children())
+        if not cart_items:
+            self.empty_cart_label.lift(self.tree_cart)
+        else:
+            self.empty_cart_label.lower(self.tree_cart)
         for item in cart_items:
-            tree_cart.insert('', 'end', values=item)
-        entry_total.config(state='normal')
-        entry_total.delete(0, tk.END)
-        entry_total.insert(0, f"{total:,}")
-        entry_total.config(state='readonly')
+            self.tree_cart.insert('', 'end', values=item[:6] + (item[6],))
+        self.label_total.config(text=f"{total:,}")
+        self.label_total_items.config(text=f"Tổng sản phẩm: {len(cart_items)}")
 
-    def on_scan():
-        barcode = payment.scan_and_add_barcode(scan_barcode)
+    def on_scan(self):
+        barcode = scan_barcode()
         if barcode:
-            entry_barcode.delete(0, tk.END)
-            entry_barcode.insert(0, barcode)
-            label_barcode.config(text=f"Barcode: {barcode}")
-            reload_cart()
+            self.cart_manager.add_to_cart(barcode, 1)
+            self.entry_barcode.delete(0, tk.END)
+            self.entry_barcode.insert(0, barcode)
+            self.reload_cart()
 
-    btn_scan = ttk.Button(frame_barcode, text='Quét mã vạch (Camera)', command=on_scan)
-    btn_scan.grid(row=0, column=3, padx=5, pady=5)
-
-    # Frame thông tin khách hàng và thanh toán
-    frame_info = ttk.LabelFrame(root, text='Thông tin thanh toán', padding=10)
-    frame_info.pack(fill=tk.X, padx=10, pady=5)
-
-    ttk.Label(frame_info, text='Tên khách hàng:').grid(row=0, column=0, padx=5, pady=5, sticky='e')
-    entry_customer = ttk.Entry(frame_info, font=('Arial', 12), state='readonly')
-    entry_customer.grid(row=0, column=1, padx=5, pady=5)
-
-    ttk.Label(frame_info, text='Số điện thoại:').grid(row=0, column=2, padx=5, pady=5, sticky='e')
-    entry_phone = ttk.Entry(frame_info, font=('Arial', 12))
-    entry_phone.grid(row=0, column=3, padx=5, pady=5)
-
-    # Nút tạo khách hàng mới (luôn hiển thị)
-    btn_create_customer = ttk.Button(frame_info, text='Tạo thông tin khách hàng')
-    btn_create_customer.grid(row=0, column=4, padx=5, pady=5)
-
-    ttk.Label(frame_info, text='Tổng tiền:').grid(row=1, column=0, padx=5, pady=5, sticky='e')
-    entry_total = ttk.Entry(frame_info, font=('Arial', 12), state='readonly')
-    entry_total.grid(row=1, column=1, padx=5, pady=5)
-
-    ttk.Label(frame_info, text='Phương thức thanh toán:').grid(row=1, column=2, padx=5, pady=5, sticky='e')
-    combobox_method = ttk.Combobox(frame_info, font=('Arial', 12), state='readonly')
-    combobox_method['values'] = ['Tiền mặt', 'Chuyển khoản', 'Thẻ']
-    combobox_method.grid(row=1, column=3, padx=5, pady=5)
-
-    # Nút xác nhận thanh toán
-    btn_pay = ttk.Button(root, text='Xác nhận thanh toán', width=20)
-    btn_pay.pack(pady=15)
-
-    # Hiển thị giỏ hàng khi mở form
-    reload_cart()
-
-    def on_phone_focus_out(event=None):
-        phone = entry_phone.get().strip()
+    def on_phone_focus_out(self, event=None):
+        phone = self.entry_phone.get().strip()
         if not phone:
-            entry_customer.config(state='normal')
-            entry_customer.delete(0, tk.END)
-            entry_customer.config(state='readonly')
+            self.entry_customer.config(state='normal')
+            self.entry_customer.delete(0, tk.END)
+            self.entry_customer.config(state='readonly')
             return
         customer = payment.get_customer_by_phone(phone)
-        entry_customer.config(state='normal')
+        self.entry_customer.config(state='normal')
         if customer:
-            entry_customer.delete(0, tk.END)
-            entry_customer.insert(0, customer[1])  # customer[1] là tên
+            self.entry_customer.delete(0, tk.END)
+            self.entry_customer.insert(0, customer[1])
         else:
-            entry_customer.delete(0, tk.END)
-        entry_customer.config(state='readonly')
+            self.entry_customer.delete(0, tk.END)
+        self.entry_customer.config(state='readonly')
 
-    entry_phone.bind('<FocusOut>', on_phone_focus_out)
-    entry_phone.bind('<Return>', lambda e: on_phone_focus_out())
-
-    def open_customer_view():
-        customer_view_path = os.path.join(os.path.dirname(__file__), 'customer_view.py')
-        subprocess.Popen([sys.executable, customer_view_path])
-
-    btn_create_customer.config(command=open_customer_view)
-
-    def on_key_press(event):
-        selected_item = tree_cart.selection()
+    def on_key_press(self, event):
+        selected_item = self.tree_cart.selection()
         if not selected_item:
             return
-        item = tree_cart.item(selected_item[0])
+        item = self.tree_cart.item(selected_item[0])
         values = item['values']
-        barcode = values[6]
+        barcode = values[1]
         quantity = int(values[3])
         if event.keysym in ('plus', 'KP_Add', 'Up'):
-            payment.update_cart_item(barcode, quantity + 1)
-            reload_cart()
+            self.cart_manager.update_cart_item(barcode, quantity + 1)
+            self.reload_cart()
         elif event.keysym in ('minus', 'KP_Subtract', 'Down'):
             if quantity > 1:
-                payment.update_cart_item(barcode, quantity - 1)
+                self.cart_manager.update_cart_item(barcode, quantity - 1)
             else:
-                payment.remove_from_cart(barcode)
-            reload_cart()
+                self.cart_manager.remove_from_cart(barcode)
+            self.reload_cart()
         elif event.keysym == 'Delete':
-            payment.remove_from_cart(barcode)
-            reload_cart()
+            self.cart_manager.remove_from_cart(barcode)
+            self.reload_cart()
 
-    tree_cart.bind('<Key>', on_key_press)
-    tree_cart.focus_set()
-
-    def on_double_click(event):
-        region = tree_cart.identify('region', event.x, event.y)
+    def on_double_click(self, event):
+        region = self.tree_cart.identify('region', event.x, event.y)
         if region != 'cell':
             return
-        col = tree_cart.identify_column(event.x)
+        col = self.tree_cart.identify_column(event.x)
         col_index = int(col.replace('#', '')) - 1
-        if columns[col_index] != 'Số lượng':
+        columns = ('STT', 'Tên SP', 'Biến thể', 'SL', 'Đơn giá', 'Thành tiền')
+        if columns[col_index] != 'SL':
             return
-        row_id = tree_cart.identify_row(event.y)
+        row_id = self.tree_cart.identify_row(event.y)
         if not row_id:
             return
-        x, y, width, height = tree_cart.bbox(row_id, col)
-        value = tree_cart.set(row_id, column=col)
-        entry = tk.Entry(tree_cart, width=5)
+        x, y, width, height = self.tree_cart.bbox(row_id, col)
+        value = self.tree_cart.set(row_id, column=col)
+        entry = tk.Entry(self.tree_cart, width=5)
         entry.place(x=x, y=y, width=width, height=height)
         entry.insert(0, value)
         entry.focus_set()
-
         def on_entry_confirm(event=None):
             new_value = entry.get()
             try:
+                if not new_value.strip():
+                    entry.destroy()
+                    return
                 new_quantity = int(new_value)
-                item = tree_cart.item(row_id)
+                item = self.tree_cart.item(row_id)
                 barcode = item['values'][6]
                 if new_quantity <= 0:
-                    payment.remove_from_cart(barcode)
+                    self.cart_manager.remove_from_cart(barcode)
                 else:
-                    payment.update_cart_item(barcode, new_quantity)
-                reload_cart()
+                    self.cart_manager.update_cart_item(barcode, new_quantity)
+                self.reload_cart()
             except Exception as e:
                 print('Lỗi cập nhật số lượng:', e)
             finally:
                 entry.destroy()
-
         entry.bind('<Return>', on_entry_confirm)
         entry.bind('<FocusOut>', on_entry_confirm)
 
-    tree_cart.bind('<Double-1>', on_double_click)
-
-    def on_barcode_enter(event=None):
-        barcode = entry_barcode.get().strip()
+    def on_barcode_enter(self, event=None):
+        barcode = self.entry_barcode.get().strip()
         if barcode:
-            payment.scan_and_add_barcode(lambda: barcode, barcode)
-            label_barcode.config(text=f"Barcode: {barcode}")
-            reload_cart()
+            self.cart_manager.add_to_cart(barcode, 1)
+            self.reload_cart()
 
-    entry_barcode.bind('<Return>', on_barcode_enter)
-
-    def on_method_selected(event=None):
-        pass  # Đã bỏ popup nhập tiền khách đưa ở đây, chỉ xử lý trong on_pay
-    combobox_method.bind('<<ComboboxSelected>>', on_method_selected)
-
-    def on_pay():
-        global tien_khach_dua, tien_thoi_lai
+    def on_pay(self):
         tien_khach_dua = 0
         tien_thoi_lai = 0
-        name = entry_customer.get().strip()
-        phone = entry_phone.get().strip()
-        method = combobox_method.get()
-        cart_items, total = payment.reload_cart()
+        name = self.entry_customer.get().strip()
+        phone = self.entry_phone.get().strip()
+        method = 'Tiền mặt'
+        cart_items = self.cart_manager.get_cart_items()
+        total = self.cart_manager.calculate_total()
         if not cart_items:
             messagebox.showwarning('Thiếu thông tin', 'Vui lòng có sản phẩm trong giỏ!')
             return
@@ -275,41 +373,168 @@ def main(nhanvien_id):
             messagebox.showwarning('Thiếu thông tin', 'Vui lòng chọn phương thức thanh toán!')
             return
         if method == 'Tiền mặt':
-            print('DEBUG: Tổng tiền truyền vào popup:', total, type(total))
-            cash_popup = CashPopup(root, float(str(total).replace(',', '')))
-            root.wait_window(cash_popup.popup)
+            cash_popup = CashPopup(self, float(str(total).replace(',', '')))
+            self.wait_window(cash_popup.popup)
             if not cash_popup.result['ok']:
                 return
             tien_khach_dua = cash_popup.tien_khach_dua
             tien_thoi_lai = cash_popup.tien_thoi_lai
-        # Lấy store_id từ settings
-        db_path = "database/ministore_db.sqlite"  # hoặc self.db_path nếu có
+        db_path = "database/ministore_db.sqlite"
         setting = SettingCore(db_path)
         store_id = setting.get_setting("selected_store_id")
         if store_id is not None:
             store_id = int(store_id)
         else:
-            store_id = 1  # fallback nếu chưa chọn cửa hàng
-        success, result = payment.process_payment(name, phone, method, cart_items, total, tien_khach_dua, tien_thoi_lai, nhanvien_id, store_id)
+            store_id = 1
+        success, result = payment.process_payment(name, phone, method, cart_items, total, tien_khach_dua, tien_thoi_lai, self.nhanvien_id, store_id)
         if success:
-            payment.clear_cart()
-            reload_cart()
-            entry_customer.config(state='normal')
-            entry_customer.delete(0, tk.END)
-            entry_customer.config(state='readonly')
-            entry_phone.delete(0, tk.END)
-            combobox_method.set('')
+            self.cart_manager.clear_cart()
+            self.reload_cart()
+            self.entry_customer.config(state='normal')
+            self.entry_customer.delete(0, tk.END)
+            self.entry_customer.config(state='readonly')
+            self.entry_phone.delete(0, tk.END)
             pdf_path = payment.export_invoice_pdf(result, tien_khach_dua, tien_thoi_lai)
             if pdf_path:
                 messagebox.showinfo('Thành công', f'Thanh toán thành công! Hóa đơn đã được lưu: {pdf_path}')
                 webbrowser.open(pdf_path)
             else:
                 messagebox.showinfo('Thành công', f'Thanh toán thành công! (Không tạo được file hóa đơn)')
+            if self.main_window and self.main_window.notebook.tabs():
+                current_tab = self.main_window.notebook.select()
+                current_tab_text = self.main_window.notebook.tab(current_tab, "text")
+                if current_tab_text.startswith("Giỏ hàng"):
+                    self.main_window.notebook.forget(current_tab)
+                    if current_tab_text in self.main_window.tabs:
+                        del self.main_window.tabs[current_tab_text]
         else:
             messagebox.showerror('Lỗi', f'Thanh toán thất bại: {result}')
-    btn_pay.config(command=on_pay)
 
-    root.mainloop()
+    def on_create_customer(self):
+        popup = tk.Toplevel(self)
+        popup.title("Tạo khách hàng mới")
+        popup.geometry("350x200")
+        tk.Label(popup, text="Tên khách hàng:", font=("Arial", 12)).pack(pady=5)
+        entry_name = tk.Entry(popup, font=("Arial", 12))
+        entry_name.pack(pady=5)
+        tk.Label(popup, text="Số điện thoại:", font=("Arial", 12)).pack(pady=5)
+        entry_phone = tk.Entry(popup, font=("Arial", 12))
+        entry_phone.pack(pady=5)
+        def save():
+            name = entry_name.get().strip()
+            phone = entry_phone.get().strip()
+            if not name or not phone:
+                messagebox.showwarning("Thiếu thông tin", "Vui lòng nhập đầy đủ tên và số điện thoại!")
+                return
+            try:
+                result = payment.create_customer_by_phone(name, phone)
+                if result:
+                    messagebox.showinfo("Thành công", "Thêm khách hàng thành công!")
+                    popup.destroy()
+                    self.entry_phone.delete(0, tk.END)
+                    self.entry_phone.insert(0, phone)
+                    self.entry_customer.config(state='normal')
+                    self.entry_customer.delete(0, tk.END)
+                    self.entry_customer.insert(0, name)
+                    self.entry_customer.config(state='readonly')
+                else:
+                    messagebox.showerror("Lỗi", "Không thể thêm khách hàng!")
+            except Exception as e:
+                messagebox.showerror("Lỗi", str(e))
+        tk.Button(popup, text="Lưu", font=("Arial", 12), command=save).pack(pady=10)
 
-if __name__ == '__main__':
-    main(1)  # test với admin, khi chạy thực tế phải truyền nhanvien_id thật 
+    def hold_cart(self):
+        cart_items = self.cart_manager.get_cart_items()
+        if not cart_items:
+            messagebox.showinfo("Thông báo", "Chưa có sản phẩm trong giỏ hàng để đưa vào hàng chờ!")
+            return
+        customer = self.entry_customer.get().strip()
+        phone = self.entry_phone.get().strip()
+        self.hold_cart_count += 1
+        customer_name = customer if customer else "Khách lẻ"
+        tab_name = f"Giỏ hàng {self.hold_cart_count} - {customer_name}"
+        hold_data = {
+            'cart': cart_items,
+            'customer': customer,
+            'phone': phone
+        }
+        if self.main_window:
+            from src.views.payment_view import PaymentView
+            frame = tk.Frame(self.main_window.notebook, bg="#F5F7FA")
+            new_cart_manager = CartManager()
+            for item in cart_items:
+                barcode = item[6]
+                quantity = item[3]
+                new_cart_manager.add_to_cart(barcode, quantity)
+            new_payment_view = PaymentView(frame, self.nhanvien_id, self.main_window, new_cart_manager)
+            new_payment_view.load_hold_cart_data(hold_data)
+            self.main_window.notebook.add(frame, text=tab_name)
+            self.main_window.tabs[tab_name] = {"frame": frame}
+            self.main_window.notebook.select(frame)
+            self.clear_cart()
+            messagebox.showinfo("Thành công", f"Đã tạo tab mới: {tab_name}")
+        else:
+            self.hold_carts.append(hold_data)
+            self.clear_cart()
+            messagebox.showinfo("Thành công", "Đã đưa giỏ hàng vào hàng chờ!")
+
+    def load_hold_cart_data(self, hold_data):
+        self.cart_manager.clear_cart()
+        self.clear_cart()
+        for item in hold_data['cart']:
+            barcode = item[6]
+            quantity = item[3]
+            self.cart_manager.add_to_cart(barcode, quantity)
+        self.entry_customer.delete(0, tk.END)
+        self.entry_customer.insert(0, hold_data['customer'])
+        self.entry_phone.delete(0, tk.END)
+        self.entry_phone.insert(0, hold_data['phone'])
+        self.reload_cart()
+
+    def show_hold_carts(self):
+        if not self.hold_carts:
+            if self.main_window:
+                messagebox.showinfo("Thông báo", "Không có giỏ hàng nào đang chờ! Các giỏ hàng chờ sẽ được hiển thị dưới dạng tab riêng biệt.")
+            else:
+                messagebox.showinfo("Thông báo", "Không có giỏ hàng nào đang chờ!")
+            return
+        popup = tk.Toplevel(self)
+        popup.title("Danh sách hàng chờ")
+        popup.geometry("500x300")
+        tk.Label(popup, text="Chọn đơn hàng chờ để tiếp tục thanh toán:", font=("Arial", 12, "bold")).pack(pady=8)
+        listbox = tk.Listbox(popup, font=("Arial", 12), height=8)
+        for idx, h in enumerate(self.hold_carts):
+            kh = h['customer'] or "(Không tên)"
+            phone = h['phone'] or ""
+            listbox.insert(tk.END, f"{idx+1}. {kh} - {phone} ({len(h['cart'])} SP)")
+        listbox.pack(fill=tk.BOTH, expand=True, padx=16, pady=8)
+        def on_select():
+            sel = listbox.curselection()
+            if not sel:
+                messagebox.showwarning("Chọn đơn", "Vui lòng chọn đơn hàng chờ!")
+                return
+            idx = sel[0]
+            hold = self.hold_carts.pop(idx)
+            self.load_hold_cart_data(hold)
+            popup.destroy()
+        btn = tk.Button(popup, text="Chọn đơn này", font=("Arial", 12, "bold"), bg="#eafaf1", fg="#222", relief="flat", bd=0, padx=12, pady=8, command=on_select)
+        btn.pack(pady=8)
+
+    def clear_cart(self):
+        self.cart_manager.clear_cart()
+        for item in self.tree_cart.get_children():
+            self.tree_cart.delete(item)
+        self.entry_customer.delete(0, tk.END)
+        self.entry_phone.delete(0, tk.END)
+        self.reload_cart()
+
+    def on_product_double_click(self, event):
+        selected = self.tree_products.selection()
+        if selected:
+            values = self.tree_products.item(selected[0])['values']
+            ten_bienthe = values[0]
+            ok = self.cart_manager.add_product_by_variant_name(ten_bienthe, 1)
+            if ok:
+                self.reload_cart()
+            else:
+                messagebox.showerror("Lỗi", "Không tìm thấy barcode cho sản phẩm này!") 

@@ -11,12 +11,15 @@ class ShelfMenuView:
         self.window.title("Menu Kệ hàng")
         self.window.geometry("300x200")
 
-        ttk.Label(self.window, text="Chức năng kệ hàng", font=("Arial", 14, "bold")).pack(pady=10)
-        ttk.Button(self.window, text="Quản lý kệ", width=25, command=self.open_shelf).pack(pady=5)
-        ttk.Button(self.window, text="Quản lý sản phẩm trên kệ", width=25, command=self.open_product_on_shelf).pack(pady=5)
+        ttk.Label(self.window, text="Chức năng kệ hàng", font=("Arial", 14, "bold")).pack(pady=10, fill=tk.X, expand=True)
+        ttk.Button(self.window, text="Quản lý kệ", width=25, command=self.open_shelf).pack(pady=5, fill=tk.X, expand=True)
+        ttk.Button(self.window, text="Quản lý sản phẩm trên kệ", width=25, command=self.open_product_on_shelf).pack(pady=5, fill=tk.X, expand=True)
 
     def open_shelf(self):
-        ShelfView(self.window, self.db_path)
+        for widget in self.window.winfo_children():
+            widget.destroy()
+        shelf_view = ShelfView(self.window, self.db_path)
+        shelf_view.pack(fill=tk.BOTH, expand=True)
 
     def open_product_on_shelf(self):
         ProductOnShelfView(self.window, self.db_path) 

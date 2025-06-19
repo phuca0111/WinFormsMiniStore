@@ -63,10 +63,11 @@ class Product:
             old = cursor.fetchone()
             cursor.execute('DELETE FROM sanpham WHERE id = ?', (self.id,))
             nguoi_thao_tac = get_last_login_user()
-            if old:
-                log_edit_delete(nguoi_thao_tac, 'xóa', 'sanpham', self.id, old[0], None, old[0], None)
             conn.commit()
             conn.close()
+            # Sau khi đã đóng kết nối, mới ghi log
+            if old:
+                log_edit_delete(nguoi_thao_tac, 'xóa', 'sanpham', self.id, old[0], None, old[0], None)
 
 def get_last_login_user():
     conn = sqlite3.connect('Database/ministore_db.sqlite')

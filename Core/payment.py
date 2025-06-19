@@ -12,8 +12,61 @@ from datetime import datetime, timedelta
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
 from Core.edit_delete_log_core import log_ban_hang
+from models.product_variant_model import ProductVariant
 
-cart = []
+class CartManager:
+    def __init__(self):
+        self.cart = []
+
+    def add_to_cart(self, barcode, quantity):
+        product = get_product_by_barcode(barcode)
+        if product:
+            for item in self.cart:
+                if str(item.barcode).strip() == str(barcode).strip():
+                    item.soluong += quantity
+                    item.thanhtien = item.soluong * item.dongia
+                    return
+            stt = len(self.cart) + 1
+            dongia = product['dongia']
+            thanhtien = quantity * dongia
+            self.cart.append(CartItem(stt, product['ten_sanpham'], product['ten_bienthe'], quantity, dongia, thanhtien, barcode))
+
+    def remove_from_cart(self, barcode):
+        self.cart = [item for item in self.cart if str(item.barcode).strip() != str(barcode).strip()]
+        for i, item in enumerate(self.cart, 1):
+            item.stt = i
+
+    def update_cart_item(self, barcode, new_quantity):
+        for item in self.cart:
+            if str(item.barcode).strip() == str(barcode).strip():
+                item.soluong = new_quantity
+                item.thanhtien = item.soluong * item.dongia
+                break
+
+    def clear_cart(self):
+        self.cart = []
+
+    def get_cart_items(self):
+        return [(
+            item.stt, item.ten_sanpham, item.ten_bienthe, item.soluong, item.dongia, item.thanhtien, item.barcode
+        ) for item in self.cart]
+
+    def calculate_total(self):
+        return sum(item.thanhtien for item in self.cart)
+
+    def add_product_by_variant_name(self, ten_bienthe, quantity=1):
+        products = ProductVariant.get_all()
+        barcode = None
+        for p in products:
+            if p.ten_bienthe == ten_bienthe:
+                barcode = p.barcode
+                break
+        if barcode:
+            self.add_to_cart(barcode, quantity)
+            return True
+        return False
+
+cart = CartManager()
 
 def get_db_path():
     return os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'Database', 'ministore_db.sqlite')
@@ -62,27 +115,27 @@ def get_product_by_barcode(barcode):
 def add_to_cart(barcode, quantity):
     product = get_product_by_barcode(barcode)
     if product:
-        for item in cart:
+        for item in cart.cart:
             if str(item.barcode).strip() == str(barcode).strip():
                 item.soluong += quantity
                 item.thanhtien = item.soluong * item.dongia
                 return
-        stt = len(cart) + 1
+        stt = len(cart.cart) + 1
         dongia = product['dongia']
         thanhtien = quantity * dongia
-        cart.append(CartItem(stt, product['ten_sanpham'], product['ten_bienthe'], quantity, dongia, thanhtien, barcode))
+        cart.cart.append(CartItem(stt, product['ten_sanpham'], product['ten_bienthe'], quantity, dongia, thanhtien, barcode))
 
 def get_cart_items():
     return [(
         item.stt, item.ten_sanpham, item.ten_bienthe, item.soluong, item.dongia, item.thanhtien, item.barcode
-    ) for item in cart]
+    ) for item in cart.cart]
 
 def calculate_total():
-    return sum(item.thanhtien for item in cart)
+    return sum(item.thanhtien for item in cart.cart)
 
 def clear_cart():
     global cart
-    cart = []
+    cart.clear_cart()
 
 def get_fifo_gia_nhap_and_update(cursor, bienthe_id, soluong_ban):
     '''
@@ -228,7 +281,7 @@ def process_payment(customer_name, phone, payment_method, cart_items, total, tie
         conn.close()
 
 def update_cart_item(barcode, new_quantity):
-    for item in cart:
+    for item in cart.cart:
         if str(item.barcode).strip() == str(barcode).strip():
             item.soluong = new_quantity
             item.thanhtien = item.soluong * item.dongia
@@ -236,9 +289,7 @@ def update_cart_item(barcode, new_quantity):
 
 def remove_from_cart(barcode):
     global cart
-    cart = [item for item in cart if str(item.barcode).strip() != str(barcode).strip()]
-    for i, item in enumerate(cart, 1):
-        item.stt = i
+    cart.remove_from_cart(barcode)
 
 def export_invoice_pdf(hoadon_id, tien_khach_dua=None, tien_thoi_lai=None, save_path=None):
     db_path = get_db_path()

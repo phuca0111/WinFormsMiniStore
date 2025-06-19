@@ -11,10 +11,14 @@ class EditDeleteLogView(tk.Frame):
         self.load_data()
 
     def create_widgets(self):
+        style = ttk.Style()
+        style.theme_use('clam')
+        style.configure("EditLog.Treeview.Heading", font=("Segoe UI", 12, "bold"), foreground="#222", background="#EEF2F6", relief="flat")
+        style.configure("EditLog.Treeview", font=("Segoe UI", 11), rowheight=30, background="#EEF2F6", fieldbackground="#EEF2F6", borderwidth=0)
         columns = ("ID", "Ngày giờ", "Người thao tác", "Hành động", "Bảng", "ID bản ghi", "Tên sản phẩm", "Trường bị sửa", "Giá trị trước", "Giá trị sau")
-        self.tree = ttk.Treeview(self, columns=columns, show="headings")
+        self.tree = ttk.Treeview(self, columns=columns, show="headings", style="EditLog.Treeview")
         for col in columns:
-            self.tree.heading(col, text=col)
+            self.tree.heading(col, text=col, anchor=tk.CENTER)
             self.tree.column(col, anchor=tk.CENTER, width=120)
         self.tree.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
 

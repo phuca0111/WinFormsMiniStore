@@ -15,3 +15,4 @@ pytz
 pandas
 #thư viện để vẽ biểu đồ
 matplotlib
+pillow

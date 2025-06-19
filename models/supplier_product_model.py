@@ -71,11 +71,6 @@ class SupplierProduct:
                 ma_lo = f'LO{now_str}{self.id}'
                 cursor.execute('UPDATE nhacungcap_sanpham SET ma_lo = ? WHERE id = ?', (ma_lo, self.id))
                 self.ma_lo = ma_lo
-                conn.commit()
-                conn.close()
-                # Ghi log thêm mới (sau khi đã đóng kết nối)
-                nguoi_thao_tac = get_last_login_user()
-                log_edit_delete(nguoi_thao_tac, 'thêm', 'nhacungcap_sanpham', self.id, None, None, None, f'Nhà cung cấp: {self.nhacungcap_id}, Biến thể: {self.bienthe_id}, SL: {self.soluong_nhap}')
 
                 # Cập nhật tồn kho
                 cursor.execute('''
@@ -84,6 +79,12 @@ class SupplierProduct:
                     ON CONFLICT(bienthe_id) DO UPDATE SET
                     soluong = soluong + ?
                 ''', (self.bienthe_id, self.soluong_nhap, self.soluong_nhap))
+
+                conn.commit()
+                # Ghi log sau khi commit nhưng trước khi close
+                nguoi_thao_tac = get_last_login_user()
+                log_edit_delete(nguoi_thao_tac, 'thêm', 'nhacungcap_sanpham', self.id, None, None, None, f'Nhà cung cấp: {self.nhacungcap_id}, Biến thể: {self.bienthe_id}, SL: {self.soluong_nhap}')
+                conn.close()
             else:
                 # Lấy giá trị cũ trước khi update
                 cursor.execute('SELECT nhacungcap_id, bienthe_id, soluong_nhap, gia_nhap, han_su_dung FROM nhacungcap_sanpham WHERE id = ?', (self.id,))
@@ -96,8 +97,7 @@ class SupplierProduct:
                 ''', (self.nhacungcap_id, self.bienthe_id, self.ngaynhap,
                       self.soluong_nhap, self.gia_nhap, self.han_su_dung, self.soluong_nhap, old[2], self.id))
                 conn.commit()
-                conn.close()
-                # Ghi log sửa (sau khi đã đóng kết nối)
+                # Ghi log sửa (sau khi đã commit nhưng trước khi close)
                 nguoi_thao_tac = get_last_login_user()
                 if old:
                     if old[0] != self.nhacungcap_id:
@@ -110,8 +110,10 @@ class SupplierProduct:
                         log_edit_delete(nguoi_thao_tac, 'sửa', 'nhacungcap_sanpham', self.id, None, 'gia_nhap', old[3], self.gia_nhap)
                     if old[4] != self.han_su_dung:
                         log_edit_delete(nguoi_thao_tac, 'sửa', 'nhacungcap_sanpham', self.id, None, 'han_su_dung', old[4], self.han_su_dung)
+                conn.close()
         except Exception as e:
             conn.rollback()
+            conn.close()
             raise e
 
     def delete(self):
