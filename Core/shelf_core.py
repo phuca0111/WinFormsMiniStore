@@ -47,15 +47,12 @@ class ShelfCore:
             log_edit_delete(log_info[0], 'sửa', 'kehang', log_info[1], log_info[2], 'ten', log_info[3], log_info[4])
 
     def delete_shelf(self, shelf_id):
-        conn = sqlite3.connect(self.db_path)
-        cursor = conn.cursor()
-        # Lấy giá trị cũ trước khi xóa
-        cursor.execute("SELECT ten FROM kehang WHERE id=?", (shelf_id,))
-        old = cursor.fetchone()
-        cursor.execute("DELETE FROM kehang WHERE id=?", (shelf_id,))
-        # Ghi log
         nguoi_thao_tac = get_last_login_user()
-        if old:
-            log_edit_delete(nguoi_thao_tac, 'xóa', 'kehang', shelf_id, old[0], None, old[0], None)
-        conn.commit()
-        conn.close() 
+        with sqlite3.connect('Database/ministore_db.sqlite') as conn:
+            cursor = conn.cursor()
+            cursor.execute('SELECT ten FROM kehang WHERE id = ?', (shelf_id,))
+            old = cursor.fetchone()
+            if old:
+                cursor.execute('DELETE FROM kehang WHERE id = ?', (shelf_id,))
+                conn.commit()
+                log_edit_delete(nguoi_thao_tac, 'xóa', 'kehang', shelf_id, old[0], None, old[0], None) 
