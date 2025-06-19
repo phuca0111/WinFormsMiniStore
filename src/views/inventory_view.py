@@ -6,6 +6,7 @@ from tkinter import ttk
 from Core.inventory import (
     load_inventory, load_variant_combobox, on_add, on_update, on_delete, on_select, on_scan_barcode, on_barcode_entered
 )
+from models.product_variant_model import ProductVariant
 
 class InventoryView(tk.Frame):
     def __init__(self, parent):
@@ -59,7 +60,7 @@ class InventoryView(tk.Frame):
         tk.Label(input_frame, text="Barcode:", font=("Segoe UI", 12, "bold"), bg="#F5F7FA", fg="#222").grid(row=0, column=0, sticky="e", padx=8, pady=8)
         self.entry_barcode = ttk.Entry(input_frame, font=("Segoe UI", 12), width=18)
         self.entry_barcode.grid(row=0, column=1, sticky="ew", padx=8, pady=8)
-        self.entry_barcode.bind('<Return>', lambda e: on_barcode_entered(self.entry_barcode, self.combobox_variant))
+        self.entry_barcode.bind('<Return>', self.on_barcode_entered)
         # Sản phẩm
         tk.Label(input_frame, text="Sản phẩm:", font=("Segoe UI", 12, "bold"), bg="#F5F7FA", fg="#222").grid(row=0, column=2, sticky="e", padx=8, pady=8)
         self.combobox_variant = ttk.Combobox(input_frame, font=("Segoe UI", 12), state='readonly', style="TCombobox", width=18)
@@ -113,6 +114,25 @@ class InventoryView(tk.Frame):
                 if v.startswith(str(bienthe_id) + ' -'):
                     self.combobox_variant.set(v)
                     break
+
+    def on_barcode_entered(self, event=None):
+        barcode = self.entry_barcode.get().strip()
+        if not barcode:
+            return
+        # Truy vấn lại database để lấy biến thể mới nhất
+        from Core.inventory import get_all_variants
+        variants = get_all_variants()
+        self.combobox_variant['values'] = [f"{v[0]} - {v[1]} - {v[2]} - {v[3]}" for v in variants]
+        variant = ProductVariant.get_by_barcode(barcode)
+        if variant:
+            bienthe_id = variant.id
+            for v in self.combobox_variant['values']:
+                if v.startswith(str(bienthe_id) + ' -'):
+                    self.combobox_variant.set(v)
+                    break
+        else:
+            import tkinter.messagebox as messagebox
+            messagebox.showwarning('Không tìm thấy', 'Không tìm thấy biến thể với barcode này!')
 
 if __name__ == "__main__":
     root = tk.Tk()

@@ -222,10 +222,14 @@ class ProductOnShelfView(tk.Frame):
             messagebox.showwarning("Không tìm thấy", "Không quét được mã vạch nào!")
 
     def on_barcode_entered(self, event=None):
+        from models.product_variant_model import ProductVariant
         barcode = self.entry_barcode.get().strip()
         if not barcode:
             return
+        # Truy vấn lại database để lấy biến thể mới nhất
         variant = ProductVariant.get_by_barcode(barcode)
+        self.variants = self.model.get_all_variants()
+        self.combo_variant['values'] = [f"{v[0]} - {v[1]} - {v[2]}" for v in self.variants]
         if variant:
             # Tìm index của biến thể trong combobox
             for i, v in enumerate(self.variants):
