@@ -2,6 +2,10 @@ import tkinter as tk
 from tkinter import ttk, messagebox, END
 from models.product_on_shelf_model import ProductOnShelfModel
 from models.inventory_model import Inventory
+from models.product_variant_model import ProductVariant
+import cv2
+from pyzbar import pyzbar
+from Core.barcode_scanner import scan_barcode
 
 class ProductOnShelfCore:
     def __init__(self, db_path):
@@ -43,9 +47,10 @@ class ProductOnShelfView(tk.Frame):
         tk.Label(input_frame, text="Barcode:", font=("Segoe UI", 12, "bold"), bg="#F5F7FA", fg="#222").grid(row=0, column=0, sticky="e", padx=8, pady=8)
         self.entry_barcode = ttk.Entry(input_frame, font=("Segoe UI", 12))
         self.entry_barcode.grid(row=0, column=1, sticky="ew", padx=8, pady=8)
+        self.entry_barcode.bind('<Return>', self.on_barcode_entered)
         self.btn_scan = tk.Button(input_frame, text="Quét mã vạch (Camera)", font=("Segoe UI", 12, "bold"), command=self.scan_barcode)
         self.btn_scan.grid(row=0, column=2, sticky="ew", padx=8, pady=8)
-        tk.Label(input_frame, text="Sản phẩm:", font=("Segoe UI", 12, "bold"), bg="#F5F7FA", fg="#222").grid(row=1, column=0, sticky="e", padx=8, pady=8)
+        tk.Label(input_frame, text="Tên kệ:", font=("Segoe UI", 12, "bold"), bg="#F5F7FA", fg="#222").grid(row=1, column=0, sticky="e", padx=8, pady=8)
         self.combo_product = ttk.Combobox(input_frame, font=("Segoe UI", 12))
         self.combo_product.grid(row=1, column=1, sticky="ew", padx=8, pady=8)
         tk.Label(input_frame, text="Biến thể:", font=("Segoe UI", 12, "bold"), bg="#F5F7FA", fg="#222").grid(row=1, column=2, sticky="e", padx=8, pady=8)
@@ -85,12 +90,12 @@ class ProductOnShelfView(tk.Frame):
         table_border.pack(fill=tk.BOTH, expand=True, padx=2, pady=2)
         table_inner = tk.Frame(table_border, bg="#fff")
         table_inner.pack(fill=tk.BOTH, expand=True, padx=2, pady=2)
-        columns = ('ID', 'Tên sản phẩm', 'Tên biến thể', 'Barcode', 'Số lượng')
+        columns = ('ID', 'Tên kệ', 'Tên biến thể', 'Barcode', 'Số lượng')
         self.tree = ttk.Treeview(table_inner, columns=columns, show='headings', height=12, style="Custom.Treeview")
         for col in columns:
             self.tree.heading(col, text=col, anchor="center")
         self.tree.column('ID', width=60, anchor="center")
-        self.tree.column('Tên sản phẩm', width=180, anchor="w")
+        self.tree.column('Tên kệ', width=180, anchor="w")
         self.tree.column('Tên biến thể', width=180, anchor="w")
         self.tree.column('Barcode', width=160, anchor="center")
         self.tree.column('Số lượng', width=100, anchor="center")
@@ -208,4 +213,24 @@ class ProductOnShelfView(tk.Frame):
             self.selected_bienthe = self.variants[self.combo_variant.current()][0] if self.combo_variant.current() >= 0 else None
 
     def scan_barcode(self):
-        messagebox.showinfo("Thông báo", "Chức năng quét mã vạch sẽ được cập nhật sau!") 
+        barcode_data = scan_barcode()
+        if barcode_data:
+            self.entry_barcode.delete(0, tk.END)
+            self.entry_barcode.insert(0, barcode_data)
+            self.on_barcode_entered()
+        else:
+            messagebox.showwarning("Không tìm thấy", "Không quét được mã vạch nào!")
+
+    def on_barcode_entered(self, event=None):
+        barcode = self.entry_barcode.get().strip()
+        if not barcode:
+            return
+        variant = ProductVariant.get_by_barcode(barcode)
+        if variant:
+            # Tìm index của biến thể trong combobox
+            for i, v in enumerate(self.variants):
+                if v[0] == variant.id:
+                    self.combo_variant.current(i)
+                    break
+        else:
+            messagebox.showwarning("Không tìm thấy", "Không tìm thấy biến thể với barcode này!") 

@@ -185,33 +185,34 @@ class PaymentView(tk.Frame):
         customer_frame.grid_columnconfigure(3, weight=1)
         customer_frame.grid_columnconfigure(5, weight=1)
 
-        # Tổng tiền & nút thanh toán
+        # Tổng tiền & 2 nút thanh toán/hàng chờ
         total_frame = ttk.Frame(right, style="Custom.TFrame")
         total_frame.pack(fill=tk.X, pady=(10, 0))
         tk.Label(total_frame, text="TỔNG TIỀN:", font=("Arial", 16, "bold"), bg=bg_color, fg="#222").pack(side=tk.LEFT)
         self.label_total = tk.Label(total_frame, text="0", font=("Arial", 28, "bold"), fg="red", bg=bg_color)
         self.label_total.pack(side=tk.LEFT, padx=10)
+
+        # Frame chứa 2 nút ngang hàng
+        button_row = tk.Frame(right, bg="#f5f7fa")
+        button_row.pack(fill=tk.X, pady=(5, 5))
         btn_pay = tk.Button(
-            right, text="XÁC NHẬN THANH TOÁN", bg="#f5f7fa", fg="#27AE60",
-            font=("Arial", 16, "bold"), width=24, height=2, relief="flat", bd=0,
+            button_row, text="XÁC NHẬN THANH TOÁN", bg="#f5f7fa", fg="#27AE60",
+            font=("Arial", 16, "bold"), width=20, height=2, relief="flat", bd=0,
             command=self.on_pay, activebackground="#e0e0e0", activeforeground="#219150"
         )
-        btn_pay.pack(pady=(0, 5), anchor="center")
-
-        # --- Hàng chờ ---
-        hold_frame = tk.Frame(right, bg="#f5f7fa")
-        hold_frame.pack(pady=2, fill=tk.X)
-        btn_hold = tk.Button(hold_frame, text="Đưa vào hàng chờ", font=("Arial", 12, "bold"), bg="#eafaf1", fg="#222", relief="flat", bd=0, padx=12, pady=8, command=self.hold_cart)
-        btn_hold.pack(side=tk.LEFT, padx=8, pady=4, fill=tk.X, expand=True)
-        
+        btn_pay.pack(side=tk.LEFT, padx=(0, 10), pady=2, fill=tk.X, expand=True)
+        btn_hold = tk.Button(
+            button_row, text="Đưa vào hàng chờ", font=("Arial", 12, "bold"), bg="#eafaf1", fg="#222", relief="flat", bd=0, padx=12, pady=8, command=self.hold_cart
+        )
+        btn_hold.pack(side=tk.LEFT, padx=(10, 0), pady=2, fill=tk.X, expand=True)
 
         # Mẹo nhỏ
         def show_tips():
             tips_popup = tk.Toplevel(self)
-            tips_popup.title("Mẹo sử dụng POS")
+            tips_popup.title("Mẹo sử dụng")
             tips_popup.geometry("400x260")
             tips_popup.resizable(False, False)
-            tk.Label(tips_popup, text="MẸO SỬ DỤNG POS", font=("Arial", 14, "bold"), fg="#2980b9").pack(pady=(12, 8))
+            tk.Label(tips_popup, text="MẸO SỬ DỤNG", font=("Arial", 14, "bold"), fg="#2980b9").pack(pady=(12, 8))
             tips_text = (
                 "- Quét mã vạch hoặc tìm kiếm sản phẩm, nhấn Enter để thêm vào giỏ.\n"
                 "- Double click vào số lượng để sửa nhanh.\n"

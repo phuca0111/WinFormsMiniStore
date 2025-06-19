@@ -63,7 +63,7 @@ class AccountView(tk.Frame):
     def show_add_form(self):
         popup = tk.Toplevel(self)
         popup.title('Tạo tài khoản mới')
-        popup.geometry('520x520')
+        popup.geometry('520x700')
         popup.configure(bg="#eef2f6")
         frm = tk.Frame(popup, bg="#eef2f6")
         frm.pack(fill=tk.BOTH, expand=True, padx=12, pady=12)
@@ -201,7 +201,7 @@ class AccountView(tk.Frame):
         conn.close()
         popup = tk.Toplevel(self)
         popup.title('Sửa tài khoản')
-        popup.geometry('520x520')
+        popup.geometry('520x700')
         popup.configure(bg="#eef2f6")
         frm = tk.Frame(popup, bg="#eef2f6")
         frm.pack(fill=tk.BOTH, expand=True, padx=12, pady=12)

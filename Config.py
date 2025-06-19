@@ -1,1 +1,0 @@
-#Cấu hình hệ thống, đường dẫn, thông tin
