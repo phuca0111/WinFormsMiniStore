@@ -213,8 +213,8 @@ def process_payment(customer_name, phone, payment_method, cart_items, total, tie
         count = cursor.fetchone()[0]
         ma_hoa_don = f"HD{datetime.now().strftime('%Y%m%d')}{count+1:04d}"
 
-        # Lấy thời gian hiện tại theo giờ Việt Nam
-        vn_now = (datetime.utcnow() + timedelta(hours=7)).strftime('%Y-%m-%d %H:%M:%S')
+        # Lấy thời gian hiện tại theo giờ Việt Nam (giờ hệ thống máy tính)
+        vn_now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
         # 3. Lưu hóa đơn (thêm khachhang_id, store_id)
         cursor.execute('''
@@ -349,8 +349,7 @@ def export_invoice_pdf(hoadon_id, tien_khach_dua=None, tien_thoi_lai=None, save_
     # Chuyển đổi ngày sang múi giờ Việt Nam nếu có
     ngay_str = hoadon[1]
     try:
-        dt_utc = datetime.strptime(ngay_str, '%Y-%m-%d %H:%M:%S')
-        dt_vn = dt_utc + timedelta(hours=7)
+        dt_vn = datetime.strptime(ngay_str, '%Y-%m-%d %H:%M:%S')
         ngay_vn = dt_vn.strftime('%d/%m/%Y %H:%M:%S')
     except Exception:
         ngay_vn = ngay_str
