@@ -275,8 +275,6 @@ class PaymentView(tk.Frame):
             self.entry_barcode.delete(0, tk.END)
             self.entry_barcode.insert(0, barcode)
             self.reload_cart()
-
-    def on_phone_focus_out(self, event=None):
         phone = self.entry_phone.get().strip()
         if not phone:
             self.entry_customer.config(state='normal')
