@@ -244,7 +244,7 @@ class PaymentView(tk.Frame):
         self.tree_cart.bind('<Double-1>', self.on_double_click)
         self.entry_barcode.bind('<Return>', self.on_barcode_enter)
         self.entry_phone.bind('<FocusOut>', self.on_phone_focus_out)
-        self.entry_phone.bind('<Return>', lambda e: self.on_phone_focus_out())
+        self.entry_phone.bind('<Return>', self.on_phone_focus_out)
 
     def set_status(self, msg):
         self.status_label.config(text=msg)
@@ -538,5 +538,12 @@ class PaymentView(tk.Frame):
                 messagebox.showerror("Lỗi", "Không tìm thấy barcode cho sản phẩm này!")
 
     def on_phone_focus_out(self, event):
-        # Hàm này được gọi khi ô điện thoại mất focus
-        pass 
+        phone = self.entry_phone.get().strip()
+        if not phone:
+            return
+        from Core.payment import get_customer_by_phone
+        customer = get_customer_by_phone(phone)
+        if customer:
+            self.entry_customer.delete(0, tk.END)
+            self.entry_customer.insert(0, customer[1])  # customer[1] là tên khách hàng
+        # Nếu không có khách hàng thì không làm gì hoặc có thể xóa tên KH 
