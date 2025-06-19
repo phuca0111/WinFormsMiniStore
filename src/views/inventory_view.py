@@ -50,7 +50,7 @@ class InventoryView(tk.Frame):
         scrollbar = tk.Scrollbar(table_inner, orient=tk.VERTICAL, command=self.tree.yview)
         scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
         self.tree.configure(yscrollcommand=scrollbar.set)
-        self.tree.bind('<<TreeviewSelect>>', lambda e: on_select(self))
+        self.tree.bind('<<TreeviewSelect>>', self.on_select)
 
         # Khung nhập thông tin bo tròn, input cùng hàng
         input_frame = tk.LabelFrame(self, text="Nhập thông tin", font=("Segoe UI", 12, "bold"), bg="#F5F7FA", fg="#222", bd=0)
@@ -87,18 +87,32 @@ class InventoryView(tk.Frame):
             btn.configure(bg=color, fg="#222", activebackground=hover, activeforeground="#222", relief="flat", bd=0, font=("Segoe UI", 12, "bold"), cursor="hand2", padx=18, pady=10, highlightthickness=0, borderwidth=0)
             btn.bind("<Enter>", lambda e: btn.configure(bg=hover))
             btn.bind("<Leave>", lambda e: btn.configure(bg=color))
-        btn_add = tk.Button(btn_frame, text='Thêm', command=lambda: on_add(self))
+        btn_add = tk.Button(btn_frame, text='Thêm', command=lambda: on_add(self.combobox_variant, self.entry_soluong, self.entry_barcode, self.tree))
         style_btn(btn_add, "#eafaf1", "#d1f2eb")
         btn_add.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=8, pady=16)
-        btn_update = tk.Button(btn_frame, text='Sửa', command=lambda: on_update(self))
+        btn_update = tk.Button(btn_frame, text='Sửa', command=lambda: on_update(self.tree, self.combobox_variant, self.entry_soluong, self.entry_barcode))
         style_btn(btn_update, "#f9e7cf", "#f6cba3")
         btn_update.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=8, pady=16)
-        btn_delete = tk.Button(btn_frame, text='Xóa', command=lambda: on_delete(self))
+        btn_delete = tk.Button(btn_frame, text='Xóa', command=lambda: on_delete(self.tree, self.combobox_variant, self.entry_soluong, self.entry_barcode))
         style_btn(btn_delete, "#fdeaea", "#f6bebe")
         btn_delete.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=8, pady=16)
         btn_refresh = tk.Button(btn_frame, text='Làm mới', command=lambda: load_inventory(self.tree))
         style_btn(btn_refresh, "#e8eaf6", "#c5cae9")
         btn_refresh.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=8, pady=16)
+
+    def on_select(self, event):
+        selected = self.tree.selection()
+        if selected:
+            item = self.tree.item(selected[0])
+            self.entry_soluong.delete(0, tk.END)
+            self.entry_soluong.insert(0, item['values'][4])  # Số lượng
+            self.entry_barcode.delete(0, tk.END)
+            self.entry_barcode.insert(0, item['values'][3])  # Barcode
+            bienthe_id = item['values'][5]
+            for v in self.combobox_variant['values']:
+                if v.startswith(str(bienthe_id) + ' -'):
+                    self.combobox_variant.set(v)
+                    break
 
 if __name__ == "__main__":
     root = tk.Tk()
