@@ -535,4 +535,8 @@ class PaymentView(tk.Frame):
             if ok:
                 self.reload_cart()
             else:
-                messagebox.showerror("Lỗi", "Không tìm thấy barcode cho sản phẩm này!") 
+                messagebox.showerror("Lỗi", "Không tìm thấy barcode cho sản phẩm này!")
+
+    def on_phone_focus_out(self, event):
+        # Hàm này được gọi khi ô điện thoại mất focus
+        pass 
