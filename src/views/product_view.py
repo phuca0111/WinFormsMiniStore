@@ -109,13 +109,16 @@ class ProductView(tk.Frame):
     def on_add(self):
         ten = self.entry_name.get().strip()
         theloai_str = self.combo_category.get()
-        if not ten or not theloai_str:
-            messagebox.showwarning('Cảnh báo', 'Vui lòng nhập tên và chọn thể loại!')
+        producer_str = self.combo_producer.get()
+        if not ten or not theloai_str or not producer_str:
+            messagebox.showwarning('Cảnh báo', 'Vui lòng nhập tên, chọn thể loại và hãng sản xuất!')
             return
         theloai_id = int(theloai_str.split(' - ')[0])
-        add_product(ten, theloai_id, None)
+        producer_id = int(producer_str.split(' - ')[0])
+        add_product(ten, theloai_id, producer_id)
         self.entry_name.delete(0, tk.END)
         self.combo_category.set('')
+        self.combo_producer.set('')
         self.load_products()
 
     def on_delete(self):
@@ -128,6 +131,7 @@ class ProductView(tk.Frame):
         delete_product(id)
         self.entry_name.delete(0, tk.END)
         self.combo_category.set('')
+        self.combo_producer.set('')
         self.load_products()
 
     def on_update(self):
@@ -137,15 +141,18 @@ class ProductView(tk.Frame):
             return
         ten_moi = self.entry_name.get().strip()
         theloai_str = self.combo_category.get()
-        if not ten_moi or not theloai_str:
-            messagebox.showwarning('Cảnh báo', 'Vui lòng nhập tên và chọn thể loại!')
+        producer_str = self.combo_producer.get()
+        if not ten_moi or not theloai_str or not producer_str:
+            messagebox.showwarning('Cảnh báo', 'Vui lòng nhập tên, chọn thể loại và hãng sản xuất!')
             return
         item = self.tree.item(selected[0])
         id = item['values'][0]
         theloai_id = int(theloai_str.split(' - ')[0])
-        update_product(id, ten_moi, theloai_id, None)
+        producer_id = int(producer_str.split(' - ')[0])
+        update_product(id, ten_moi, theloai_id, producer_id)
         self.entry_name.delete(0, tk.END)
         self.combo_category.set('')
+        self.combo_producer.set('')
         self.load_products()
 
     def on_select(self, event):
@@ -154,10 +161,18 @@ class ProductView(tk.Frame):
             item = self.tree.item(selected[0])
             self.entry_name.delete(0, tk.END)
             self.entry_name.insert(0, item['values'][1])
-            theloai_id = item['values'][3]
+            # Lấy id thể loại và hãng sản xuất từ treeview
+            theloai = item['values'][2]
+            hang = item['values'][3]
+            # Set combobox thể loại
             for v in self.combo_category['values']:
-                if v.startswith(str(theloai_id) + ' -'):
+                if theloai in v:
                     self.combo_category.set(v)
+                    break
+            # Set combobox hãng sản xuất
+            for v in self.combo_producer['values']:
+                if v.endswith(f"- {hang}"):
+                    self.combo_producer.set(v)
                     break
 
     def on_refresh(self):
