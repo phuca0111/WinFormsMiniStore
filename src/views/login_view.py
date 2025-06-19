@@ -49,7 +49,7 @@ def show_login(root, on_success):
     # Dòng đăng ký
     bottom_frame = tk.Frame(frame, bg="white")
     bottom_frame.pack(pady=(10, 0), fill="x")
-    tk.Label(bottom_frame, text="Bạn chưa có tài khoản?", font=("Segoe UI", 10), bg="white", fg="#888").pack(side="left", padx=(28, 0))
+    tk.Label(bottom_frame, text="TK:admin - MK:123456", font=("Segoe UI", 10), bg="white", fg="#888").pack(side="left", padx=(28, 0))
     lbl_register = tk.Label(bottom_frame, text="Đăng ký ngay", font=("Segoe UI", 10, "underline"), bg="white", fg="#1976d2", cursor="hand2")
     lbl_register.pack(side="left", padx=(4, 0))
     # Bind click đăng ký
