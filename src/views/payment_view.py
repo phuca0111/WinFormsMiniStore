@@ -203,8 +203,7 @@ class PaymentView(tk.Frame):
         hold_frame.pack(pady=2, fill=tk.X)
         btn_hold = tk.Button(hold_frame, text="Đưa vào hàng chờ", font=("Arial", 12, "bold"), bg="#eafaf1", fg="#222", relief="flat", bd=0, padx=12, pady=8, command=self.hold_cart)
         btn_hold.pack(side=tk.LEFT, padx=8, pady=4, fill=tk.X, expand=True)
-        btn_list_hold = tk.Button(hold_frame, text="Danh sách hàng chờ", font=("Arial", 12, "bold"), bg="#e8eaf6", fg="#222", relief="flat", bd=0, padx=12, pady=8, command=self.show_hold_carts)
-        btn_list_hold.pack(side=tk.LEFT, padx=8, pady=4, fill=tk.X, expand=True)
+        
 
         # Mẹo nhỏ
         def show_tips():

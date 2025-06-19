@@ -11,7 +11,7 @@ def start_app(user_info):
     root = tk._default_root  # Lấy root đã tạo từ trước
     root.deiconify()  # Hiện lại cửa sổ chính
     root.title("Quản lý MiniStore")
-    root.geometry("1400x750")
+    root.geometry("1400x760")
     # Căn giữa cửa sổ
     root.update_idletasks()
     w = root.winfo_width()
