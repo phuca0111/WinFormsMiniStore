@@ -3,6 +3,7 @@ from tkinter import ttk, filedialog, messagebox
 import sqlite3
 import pandas as pd
 from datetime import datetime
+from tkcalendar import DateEntry
 
 class PhieuTieuHuyReportView(tk.Frame):
     def __init__(self, parent, db_path='Database/ministore_db.sqlite'):
@@ -18,10 +19,10 @@ class PhieuTieuHuyReportView(tk.Frame):
         frame_top = tk.Frame(self, bg="#EEF2F6")
         frame_top.pack(fill=tk.X, pady=16, padx=32)
         tk.Label(frame_top, text="Từ ngày:", font=("Segoe UI", 12), bg="#EEF2F6").pack(side=tk.LEFT, padx=(0, 4))
-        self.entry_from = ttk.Entry(frame_top, width=12, font=("Segoe UI", 12))
+        self.entry_from = DateEntry(frame_top, width=12, font=("Segoe UI", 12), date_pattern='yyyy-mm-dd', background='#eafaf1', foreground='#222', borderwidth=2)
         self.entry_from.pack(side=tk.LEFT, padx=(0, 16))
         tk.Label(frame_top, text="Đến ngày:", font=("Segoe UI", 12), bg="#EEF2F6").pack(side=tk.LEFT, padx=(0, 4))
-        self.entry_to = ttk.Entry(frame_top, width=12, font=("Segoe UI", 12))
+        self.entry_to = DateEntry(frame_top, width=12, font=("Segoe UI", 12), date_pattern='yyyy-mm-dd', background='#eafaf1', foreground='#222', borderwidth=2)
         self.entry_to.pack(side=tk.LEFT, padx=(0, 16))
         btn_filter = tk.Button(frame_top, text="Lọc", font=("Segoe UI", 12, "bold"), bg="#eafaf1", fg="#222", activebackground="#d1f2eb", relief="flat", bd=0, padx=18, pady=6, cursor="hand2", highlightthickness=0)
         btn_filter.pack(side=tk.LEFT, padx=(0, 16))
@@ -116,8 +117,8 @@ class PhieuTieuHuyReportView(tk.Frame):
             self.current_data.append(row)
 
     def on_filter(self):
-        from_date = self.entry_from.get().strip()
-        to_date = self.entry_to.get().strip()
+        from_date = self.entry_from.get_date()
+        to_date = self.entry_to.get_date()
         self.load_data(from_date or None, to_date or None)
 
     def export_excel(self):
