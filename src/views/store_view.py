@@ -210,4 +210,6 @@ class StoreView(tk.Frame):
             setting = SettingCore(db_path)
             setting.set_setting("selected_store_id", str(store_id))
             tk.messagebox.showinfo("Thành công", f"Đã chọn cửa hàng ID: {store_id}")
-            dialog.destroy() 
+            dialog.destroy()
+        btn_ok = tk.Button(dialog, text="Xác nhận", font=("Segoe UI", 12, "bold"), bg="#eafaf1", fg="#222", relief="flat", bd=0, padx=18, pady=6, command=on_ok)
+        btn_ok.pack(pady=10) 
